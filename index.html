@@ -119,7 +119,9 @@ textarea{width:100%;min-height:120px;font:13px/1.4 ui-monospace,monospace;border
 
 <div id="child">
   <div id="bar"></div>
+  <div id="cue" class="row" style="justify-content:center;margin-bottom:22px"><span id="cueLang" class="lang en">EN</span><span id="cueName" style="font-size:18px;font-weight:700">English</span><span class="muted" aria-hidden="true">·</span><span id="cueWord" style="font-size:26px;font-weight:900">dog</span></div>
   <div id="cardwrap"><div id="ring"></div><div id="card">🐶</div></div>
+  <div id="cueDo" aria-live="polite" style="margin-top:22px;min-height:54px;padding-inline:16px;font-size:18px;font-weight:700;text-align:center"></div>
   <div id="confirm"><button id="noBtn" aria-label="Missed">🤫</button><button id="yesBtn" aria-label="Said it">👏</button></div>
   <div id="exit"></div>
 </div>
@@ -141,6 +143,7 @@ const OBJECTS=[
 ];
 const LOC={en:'en-US',de:'de-DE',es:'es-ES'};
 const PRAISE={en:'Yes!',de:'Ja!',es:'¡Sí!'};
+const LANGNAME={en:'English',de:'German',es:'Spanish'};
 const KEY='rr-pilot-v1';
 const S={log:[],dropped:[],settings:{en:true,de:true,es:true,min:11,parent:false}};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
@@ -230,6 +233,7 @@ let queue=[],turnNo=0,current=null,timer=null,endAt=0,busy=false,rec=null;
 const wrap=$('cardwrap'),card=$('card');
 let lastSpeech='';
 let lastRecError='';
+const cue=t=>{$('cueDo').textContent=t;};
 function speak(text,lang){return new Promise(res=>{try{if(!window.speechSynthesis){lastSpeech='no speechSynthesis';return res();}const u=new SpeechSynthesisUtterance(text);u.lang=LOC[lang];u.rate=.85;u.volume=1;const vs=speechSynthesis.getVoices().filter(v=>v.lang.replace('_','-').toLowerCase().startsWith(lang));if(vs.length)u.voice=vs.find(v=>/google/i.test(v.name))||vs[0];let done=false;const fin=m=>{if(!done){done=true;lastSpeech=m;res();}};u.onstart=()=>{lastSpeech='ok';};u.onend=()=>fin(lastSpeech||'ended');u.onerror=e=>fin('error: '+(e.error||'unknown'));if(speechSynthesis.speaking||speechSynthesis.pending)speechSynthesis.cancel();speechSynthesis.speak(u);setTimeout(()=>fin(lastSpeech||'timeout, no onstart'),3000);}catch(e){lastSpeech='exception: '+e.message;res();}});}
 function norm(s){return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,'');}
 function sim(a,b){const m=a.length,n=b.length;if(!m||!n)return 0;const d=[];for(let i=0;i<=m;i++){d[i]=[i];}for(let j=1;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return 1-d[m][n]/Math.max(m,n);}
@@ -241,19 +245,20 @@ function parentConfirm(){return new Promise(res=>{$('confirm').classList.add('on
 async function runTurn(){
   if(busy||!current)return;busy=true;
   const o=OBJECTS.find(x=>x.id===current.obj),l=current.lang,word=o[l];
-  wrap.className='speaking';await speak(word,l);
+  wrap.className='speaking';cue('Listen…');await speak(word,l);
   let said=null,judge='asr';
-  if(!S.settings.parent&&!asrBlocked){wrap.className='listening';const alts=await listen(l);if(alts===null){judge='parent';asrBlocked=true;}else{said=matches(alts,word);}}
-  if(said===null){judge='parent';wrap.className='';said=await parentConfirm();}
+  if(!S.settings.parent&&!asrBlocked){wrap.className='listening';cue('Say it now — listening…');const alts=await listen(l);if(alts===null){judge='parent';asrBlocked=true;}else{said=matches(alts,word);}}
+  if(said===null){judge='parent';wrap.className='';cue((asrBlocked&&!S.settings.parent?'Mic not available — did':'Did')+' she say it? 👏 yes · 🤫 not yet');said=await parentConfirm();}
   wrap.className='';
-  if(said){wrap.classList.add('ok');logTurn('said',judge);await speak(PRAISE[l]+' '+word,l);}
-  else{logTurn('missed',judge);await speak(word,l);queue.splice(Math.min(3,queue.length),0,{...current});}
+  if(said){wrap.classList.add('ok');cue('✓ Said it');logTurn('said',judge);await speak(PRAISE[l]+' '+word,l);}
+  else{cue('Not yet — listen again');logTurn('missed',judge);await speak(word,l);queue.splice(Math.min(3,queue.length),0,{...current});}
   wrap.className='';busy=false;next();
 }
 function next(){
   if(Date.now()>endAt||!queue.length){return endSession();}
   current=queue.shift();turnNo++;
   const o=OBJECTS.find(x=>x.id===current.obj);card.textContent=o.e;
+  $('cueLang').className='lang '+current.lang;$('cueLang').textContent=current.lang.toUpperCase();$('cueName').textContent=LANGNAME[current.lang];$('cueWord').textContent=o[current.lang];cue('Tap the picture');
   wrap.style.setProperty('--accent',`var(--${current.lang})`);
 }
 function startSession(){
