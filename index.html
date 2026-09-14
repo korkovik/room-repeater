@@ -248,7 +248,7 @@ async function runTurn(){
   wrap.className='speaking';cue('Listen…');await speak(word,l);
   let said=null,judge='asr';
   if(!S.settings.parent&&!asrBlocked){wrap.className='listening';cue('Say it now — listening…');const alts=await listen(l);if(alts===null){judge='parent';asrBlocked=true;}else{said=matches(alts,word);}}
-  if(said===null){judge='parent';wrap.className='';cue((asrBlocked&&!S.settings.parent?'Mic not available — did':'Did')+' she say it? 👏 yes · 🤫 not yet');said=await parentConfirm();}
+  if(said===null){judge='parent';wrap.className='';cue((asrBlocked&&!S.settings.parent?'Mic not available — did':'Did')+' she say it? 👏\u00a0yes\u00a0·\u00a0🤫\u00a0not\u00a0yet');said=await parentConfirm();}
   wrap.className='';
   if(said){wrap.classList.add('ok');cue('✓ Said it');logTurn('said',judge);await speak(PRAISE[l]+' '+word,l);}
   else{cue('Not yet — listen again');logTurn('missed',judge);await speak(word,l);queue.splice(Math.min(3,queue.length),0,{...current});}
