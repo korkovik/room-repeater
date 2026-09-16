@@ -102,7 +102,7 @@ textarea{width:100%;min-height:120px;font:13px/1.4 ui-monospace,monospace;border
     <label class="opt"><input type="checkbox" id="optEn" checked> <span class="lang en">EN</span> English</label>
     <label class="opt"><input type="checkbox" id="optDe" checked> <span class="lang de">DE</span> German</label>
     <label class="opt"><input type="checkbox" id="optEs" checked> <span class="lang es">ES</span> Spanish</label>
-    <label class="opt">Session length <input type="number" id="optMin" min="3" max="15" value="11"> min</label>
+    <label class="opt">Session length <input type="number" id="optPics" min="6" max="30" value="12"> pictures</label>
     <label class="opt"><input type="checkbox" id="optParent"> Parent confirms every word (skip speech recognition)</label>
     <div class="row" style="margin-top:10px">
       <button id="testBtn">Test sound</button>
@@ -145,13 +145,15 @@ const LOC={en:'en-US',de:'de-DE',es:'es-ES'};
 const PRAISE={en:'Yes!',de:'Ja!',es:'¡Sí!'};
 const LANGNAME={en:'English',de:'German',es:'Spanish'};
 const KEY='rr-pilot-v1';
-const S={log:[],dropped:[],settings:{en:true,de:true,es:true,min:11,parent:false}};
+const S={log:[],dropped:[],settings:{en:true,de:true,es:true,pics:12,parent:false}};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const today=()=>new Date().toISOString().slice(0,10);
 const dayDiff=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
 const langs=()=>['en','de','es'].filter(l=>S.settings[l]);
 const key=(o,l)=>o+'|'+l;
+// Pictures per session. Settings saved before this held minutes instead, so a missing value means the default.
+const pics=()=>{const n=Math.round(+S.settings.pics);return Number.isFinite(n)?Math.min(30,Math.max(6,n)):12;};
 
 // ---------- status per pair ----------
 function stats(){
@@ -181,10 +183,11 @@ function buildPlan(){
   const push=(p,why)=>{if(!plan.find(x=>x.obj===p.obj.id&&x.lang===p.lang))plan.push({obj:p.obj.id,lang:p.lang,why});};
   yesterday.forEach(p=>push(p,'miss'));
   stale.forEach(p=>push(p,'stale'));
-  // rule 3: max two new objects (each in all active languages)
-  const heardObjs=new Set(S.log.map(t=>t.obj));
-  const newObjs=OBJECTS.filter(o=>!heardObjs.has(o.id)).slice(0,2);
-  newObjs.forEach(o=>L.forEach(l=>push(m[key(o.id,l)],'new')));
+  // rule 3: max two new objects (each in all active languages). An object stays new while any active language
+  // is unheard: a short session can show its English but not its German, and the German must still come up.
+  const unheard=o=>L.filter(l=>m[key(o.id,l)].heard===0&&!m[key(o.id,l)].dropped);
+  const newObjs=OBJECTS.filter(o=>unheard(o).length).slice(0,2);
+  newObjs.forEach(o=>unheard(o).forEach(l=>push(m[key(o.id,l)],'new')));
   // fill with review of known pairs, freshest last
   Object.values(m).filter(p=>L.includes(p.lang)&&!p.dropped&&p.heard>0&&p.last!==d).sort((a,b)=>(a.last>b.last?1:-1)).forEach(p=>push(p,'review'));
   return plan;
@@ -207,7 +210,7 @@ const $=id=>document.getElementById(id);
 function render(){
   const m=stats(),plan=buildPlan(),d=today();
   const doneToday=S.log.filter(t=>t.day===d);
-  $('planMeta').textContent=doneToday.length?`${doneToday.length} turns today · ${doneToday.filter(t=>t.result==='said').length} said back`:`${plan.length} words planned · ${S.settings.min} min`;
+  $('planMeta').textContent=doneToday.length?`${doneToday.length} turns today · ${doneToday.filter(t=>t.result==='said').length} said back`:`${plan.length} words planned · ${pics()} pictures`;
   $('planList').innerHTML=plan.slice(0,12).map(x=>{const o=OBJECTS.find(o=>o.id===x.obj);return `<span>${o.e} <span class="lang ${x.lang}">${x.lang.toUpperCase()}</span> ${o[x.lang]}${x.why==='miss'?' ↩':x.why==='new'?' ✦':''}</span>`;}).join('')+(plan.length>12?`<span class="muted">+${plan.length-12}</span>`:'');
   const dw=dinnerWords();
   $('dinner').innerHTML=dw.length?dw.map(p=>`<li><button class="play" data-w="${p.obj[p.lang]}" data-l="${p.lang}" aria-label="Play">▶</button> <b>${p.obj[p.lang]}</b> <span class="lang ${p.lang}">${p.lang.toUpperCase()}</span> — say it ${MOMENT[p.obj.id]}, then wait three seconds. If nothing comes, say it once more and carry on.</li>`).join(''):'<li class="muted">Run a session first.</li>';
@@ -217,19 +220,19 @@ function render(){
   let h='<tr><th>Object</th>'+['en','de','es'].map(l=>`<th><span class="lang ${l}">${l.toUpperCase()}</span></th>`).join('')+'</tr>';
   for(const o of OBJECTS){h+=`<tr><td>${o.e} ${o.cz}</td>`+['en','de','es'].map(l=>{const p=m[key(o.id,l)];return `<td><span class="st ${p.status}" title="${o[l]}">${p.status==='new'?'·':p.status==='dropped'?'✕':p.saidDays.size||'○'}</span></td>`;}).join('')+'</tr>';}
   $('tbl').innerHTML=h;
-  $('optEn').checked=S.settings.en;$('optDe').checked=S.settings.de;$('optEs').checked=S.settings.es;$('optMin').value=S.settings.min;$('optParent').checked=S.settings.parent;
+  $('optEn').checked=S.settings.en;$('optDe').checked=S.settings.de;$('optEs').checked=S.settings.es;$('optPics').value=pics();$('optParent').checked=S.settings.parent;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   $('asrNote').textContent=SR?(S.settings.parent?'Parent-confirm mode: you tap 👏 or 🤫 after each word.':asrBlocked?'Speech recognition stopped working this time (microphone blocked, missing or offline), so you tap 👏 or 🤫 after each word. Check Test microphone in Settings, then reload.':'This browser supports speech recognition — that is not a microphone check, so press Test microphone in Settings first. In a session the app judges what she says on its own.'):'No speech recognition in this browser — parent-confirm mode is used.';
 }
 ['optEn','optDe','optEs','optParent'].forEach(id=>$(id).addEventListener('change',()=>{S.settings.en=$('optEn').checked;S.settings.de=$('optDe').checked;S.settings.es=$('optEs').checked;S.settings.parent=$('optParent').checked;if(!langs().length){S.settings.en=true;}save();render();}));
-$('optMin').addEventListener('change',()=>{S.settings.min=Math.min(15,Math.max(3,+$('optMin').value||11));save();render();});
+$('optPics').addEventListener('change',()=>{S.settings.pics=Math.min(30,Math.max(6,Math.round(+$('optPics').value)||12));save();render();});
 $('testBtn').onclick=async()=>{const out=$('testOut');const vs=(window.speechSynthesis?speechSynthesis.getVoices():[]);out.textContent='Voices: '+vs.length+' ('+['en','de','es'].map(l=>l+':'+vs.filter(v=>v.lang.toLowerCase().replace('_','-').startsWith(l)).length).join(', ')+'). Speaking…';lastSpeech='';await speak('dog',"en");const a=lastSpeech;await speak('Hund',"de");const d=lastSpeech;await speak('perro',"es");const played=m=>m==='ok'?'played':m;out.textContent+=' EN: '+played(a)+' · DE: '+played(d)+' · ES: '+played(lastSpeech)+'. This checks the speaker only — use Test microphone for the mic.';};
 $('micBtn').onclick=async()=>{const out=$('testOut'),btn=$('micBtn');btn.disabled=true;out.textContent='Listening — say "dog" now…';const alts=await listen('en');btn.disabled=false;if(alts&&alts.length){const heard=(alts[0]||'').trim()||'something';out.textContent=matches(alts,'dog')?'✓ The microphone works — it heard "'+heard+'".':'✓ The microphone works — it heard "'+heard+'", not "dog". Try again, clearly and close to the phone.';return;}const blocked='the microphone is blocked for this site. Allow it in Chrome (tap the icon left of the address), then reload.';const why={'not-allowed':blocked,'service-not-allowed':blocked,'audio-capture':'no working microphone was found, or another app is using it.','network':'speech recognition needs internet — check the connection.','unsupported':'this browser has no speech recognition, so sessions use parent-confirm (👏/🤫).','start-failed':'speech recognition could not start. Reload and try again.'}[lastRecError];out.textContent='✕ Microphone test failed: '+(why||'nothing was heard. Check the microphone isn’t muted or covered, then try again.');};
 $('resetBtn').onclick=()=>{if(confirm('Delete the whole log?')){S.log=[];S.dropped=[];save();render();}};
 $('exportBtn').onclick=async()=>{const csv='day,time,object,lang,word,result,judge\n'+S.log.map(t=>[t.day,t.ts,t.obj,t.lang,OBJECTS.find(o=>o.id===t.obj)[t.lang],t.result,t.judge].join(',')).join('\n');$('csv').value=csv;try{await navigator.clipboard.writeText(csv);$('exportBtn').textContent='Copied';}catch(e){$('csv').hidden=false;}setTimeout(()=>$('exportBtn').textContent='Copy log as CSV',1500);};
 
 // ---------- child mode ----------
-let queue=[],turnNo=0,current=null,timer=null,endAt=0,busy=false,rec=null;
+let queue=[],turnNo=0,current=null,timer=null,endAt=0,busy=false,rec=null,cap=12;
 const wrap=$('cardwrap'),card=$('card');
 let lastSpeech='';
 let lastRecError='';
@@ -251,12 +254,12 @@ async function runTurn(){
   if(said===null){judge='parent';wrap.className='';cue((asrBlocked&&!S.settings.parent?'Mic not available — did':'Did')+' she say it? 👏\u00a0yes\u00a0·\u00a0🤫\u00a0not\u00a0yet');said=await parentConfirm();}
   wrap.className='';
   if(said){wrap.classList.add('ok');cue('✓ Said it');logTurn('said',judge);await speak(PRAISE[l]+' '+word,l);}
-  else{cue('Not yet — listen again');logTurn('missed',judge);await speak(word,l);queue.splice(Math.min(3,queue.length),0,{...current});}
+  else{cue('Not yet — listen again');logTurn('missed',judge);await speak(word,l);const room=cap-turnNo;if(room>=2)queue.splice(Math.min(3,queue.length,room-1),0,{...current});}
   wrap.className='';busy=false;next();
 }
 function next(){
-  if(Date.now()>endAt||!queue.length){return endSession();}
-  current=queue.shift();turnNo++;
+  if(Date.now()>endAt||!queue.length||turnNo>=cap){return endSession();}
+  current=queue.shift();turnNo++;$('bar').style.width=Math.min(100,(turnNo-1)/cap*100)+'%';
   const o=OBJECTS.find(x=>x.id===current.obj);card.textContent=o.e;
   $('cueLang').className='lang '+current.lang;$('cueLang').textContent=current.lang.toUpperCase();$('cueName').textContent=LANGNAME[current.lang];$('cueWord').textContent=o[current.lang];cue('Tap the picture');
   wrap.style.setProperty('--accent',`var(--${current.lang})`);
@@ -269,9 +272,10 @@ function startSession(){
   while(L.some(l=>byLang[l].length))for(const l of L)if(byLang[l].length)queue.push(byLang[l].shift());
   // loop review so the session fills the time
   const base=queue.slice();for(let i=0;i<6;i++)queue.push(...base.map(x=>({...x,why:'review'})));
-  endAt=Date.now()+S.settings.min*60000;
+  // the picture limit sets the length; 15 minutes only closes a session nobody finishes
+  cap=pics();endAt=Date.now()+15*60000;
   $('child').classList.add('on');
-  timer=setInterval(()=>{const p=1-(endAt-Date.now())/(S.settings.min*60000);$('bar').style.width=Math.min(100,p*100)+'%';if(Date.now()>endAt&&!busy)endSession();},1000);
+  timer=setInterval(()=>{if(Date.now()>endAt&&!busy)endSession();},1000);
   turnNo=0;next();
   try{const fs=document.documentElement.requestFullscreen;if(fs){const r=fs.call(document.documentElement);if(r&&r.catch)r.catch(()=>{});}}catch(e){}
 }
