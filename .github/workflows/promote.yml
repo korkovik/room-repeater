@@ -1,0 +1,48 @@
+name: Promote Room Repeater
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "uat = dev->uat, prod = uat->live"
+        required: true
+        type: choice
+        options: [uat, prod]
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: promote
+  cancel-in-progress: false
+env:
+  SITE_DIR: "."
+  # GitHub Pages publishes from this branch (Settings -> Pages), not from the default branch
+  PAGES_BRANCH: dev
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PAGES_BRANCH }}
+      - name: Copy build
+        env:
+          TARGET: ${{ inputs.target }}
+        run: bash "$SITE_DIR/promote.sh" "$TARGET"
+      - name: Commit
+        id: commit
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "Nothing to promote."; exit 0; fi
+          git commit -m "Promote to $TARGET"
+          git push origin "HEAD:$PAGES_BRANCH"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      # A push made with GITHUB_TOKEN does not trigger a Pages build, so ask for one explicitly
+      - name: Rebuild GitHub Pages
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds"
