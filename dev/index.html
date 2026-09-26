@@ -1,5 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
+<!-- CSP (S6, architecture.md §9). Once RR_BACKENDS holds project URLs, add the exact https://<ref>.supabase.co hosts to connect-src. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Room Repeater</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;900&display=swap">
@@ -107,7 +109,78 @@ textarea{width:100%;min-height:120px;font:13px/1.4 ui-monospace,monospace;border
 @keyframes fadein{from{opacity:0}to{opacity:1}}
 @keyframes fall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(calc(100vh + 48px)) rotate(var(--r,360deg))}}
 @media (prefers-reduced-motion:reduce){#party *{animation:none!important}#confetti{display:none}}
+/* I1 accounts: sign-in, onboarding and account card */
+[hidden]{display:none!important}
+.stack{display:flex;flex-direction:column;gap:14px}
+.stack p{margin:0}
+.fld{display:flex;flex-direction:column;gap:6px;font-weight:700}
+.fld input{font:inherit;font-weight:500;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+.fld input:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.err{color:var(--es);font-weight:700}
+.err:empty{display:none}
+button:disabled{opacity:.5;cursor:default}
+button.linkbtn{background:none;box-shadow:none;color:var(--accent);text-decoration:underline;padding:6px 0}
+.drafthead{font-weight:900;color:var(--es)}
+.stubbox{box-shadow:0 0 0 2px #7B3FE4 inset;font-size:14px}
+.stubbox a{color:#7B3FE4;font-weight:700}
+fieldset.langs{border:0;margin:0;padding:0}
+fieldset.langs legend{font-weight:700;padding:0}
 </style>
+
+<div class="wrap" id="acct" hidden>
+  <div class="row" style="justify-content:flex-end"><button type="button" class="linkbtn" id="acctOut" data-testid="onboard-signout" hidden>Sign out</button></div>
+  <div id="scrWait" class="stack" hidden>
+    <h1>Room Repeater pilot</h1>
+    <p class="muted" id="waitMsg" data-testid="wait-msg" aria-live="polite"></p>
+    <div><button type="button" id="btnRetry" data-testid="retry" hidden>Try again</button></div>
+  </div>
+  <form id="scrSignin" class="stack" novalidate hidden>
+    <h1>Room Repeater pilot</h1>
+    <p>This pilot is invite-only. Enter the email address your invitation was sent to.</p>
+    <label class="fld">Email<input type="email" id="inEmail" data-testid="signin-email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></label>
+    <div class="err" id="signinErr" data-testid="signin-error" aria-live="polite"></div>
+    <div><button type="submit" class="primary" id="btnSend" data-testid="signin-send">Send sign-in link</button></div>
+  </form>
+  <form id="scrCode" class="stack" novalidate hidden>
+    <h1>Check your email</h1>
+    <p>We sent a sign-in link to <b id="codeEmail"></b>. Open the link on this phone to sign in, or type the 6-digit code from the email.</p>
+    <label class="fld">6-digit code<input type="text" id="inCode" data-testid="code-input" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="12"></label>
+    <div class="err" id="codeErr" data-testid="code-error" aria-live="polite"></div>
+    <div class="muted" id="codeInfo" data-testid="code-info" aria-live="polite"></div>
+    <div class="row"><button type="submit" class="primary" id="btnCode" data-testid="code-submit">Sign in</button><button type="button" id="btnResend" data-testid="send-again">Send again</button><button type="button" class="linkbtn" id="btnOther" data-testid="different-email">Use a different email</button></div>
+    <div class="card stubbox" id="stubBox" data-testid="stub-box" hidden>Stub backend — no email is sent. Code: 123456. <a id="stubLink" data-testid="stub-link" href="#">Open sign-in link</a></div>
+  </form>
+  <div id="scrTerms" class="stack" hidden>
+    <h1>Welcome to the Room Repeater pilot</h1>
+    <p>Before you start, please read the Privacy notice and the Terms.</p>
+    <div class="row"><button type="button" class="linkbtn" id="lnkPrivacy" data-testid="link-privacy">Privacy notice (draft)</button><button type="button" class="linkbtn" id="lnkTerms" data-testid="link-terms">Terms (draft)</button></div>
+    <div class="card" id="draftPanel" data-testid="draft-panel" role="region" aria-labelledby="draftHead" hidden>
+      <div id="draftHead" class="drafthead">DRAFT — placeholder, final text comes before launch</div>
+      <div id="draftWhich" style="font-weight:700;margin-top:6px"></div>
+      <p class="muted" id="draftBody" style="margin:6px 0 10px"></p>
+      <button type="button" id="draftClose" data-testid="draft-close">Close</button>
+    </div>
+    <label class="opt"><input type="checkbox" id="chkTerms" data-testid="terms-accept"> I have read and accept the Privacy notice and Terms</label>
+    <div class="err" id="termsErr" data-testid="terms-error" aria-live="polite"></div>
+    <div><button type="button" class="primary" id="btnTerms" data-testid="terms-continue" disabled>Continue</button></div>
+  </div>
+  <form id="scrChild" class="stack" novalidate hidden>
+    <h1>Your child</h1>
+    <label class="fld">Nickname<input type="text" id="inNick" data-testid="child-nickname" autocomplete="off" spellcheck="false" aria-describedby="nickHint"></label>
+    <div class="muted" id="nickHint">A nickname, not the full name</div>
+    <fieldset class="langs"><legend>Languages</legend>
+      <label class="opt"><input type="checkbox" id="chEn" data-testid="child-lang-en" checked> <span class="lang en">EN</span> English</label>
+      <label class="opt"><input type="checkbox" id="chDe" data-testid="child-lang-de" checked> <span class="lang de">DE</span> German</label>
+      <label class="opt"><input type="checkbox" id="chEs" data-testid="child-lang-es" checked> <span class="lang es">ES</span> Spanish</label>
+    </fieldset>
+    <div class="err" id="childErr" data-testid="child-error" aria-live="polite"></div>
+    <div><button type="submit" class="primary" id="btnChild" data-testid="child-save">Save</button></div>
+  </form>
+  <div id="scrBackendErr" class="stack" hidden>
+    <h1 id="backendErr" data-testid="backend-error"></h1>
+    <p class="muted">Add the Project URL and anon key to RR_BACKENDS in this page, or open it with ?backend=stub.</p>
+  </div>
+</div>
 
 <div class="wrap" id="parent">
   <div>
@@ -115,6 +188,22 @@ textarea{width:100%;min-height:120px;font:13px/1.4 ui-monospace,monospace;border
     <div class="muted">Pilot · Android Chrome · EN / DE / ES</div>
     <div class="muted" style="margin-top:8px"><b>How to use it.</b> Press <b>Test sound</b> in Settings first, then allow the microphone when Chrome asks (it needs internet). Keep the phone close to her, somewhere quiet. After she taps a picture and hears the word, stay silent while the ring is green — the app can’t tell your voice from hers. If she doesn’t say it, just carry on; it comes back later. It’s built for one session a day.</div>
   </div>
+
+  <div class="card" id="acctCard" hidden>
+    <div class="row" style="justify-content:space-between">
+      <div style="min-width:0">
+        <div id="whoami" data-testid="whoami" style="font-weight:700;overflow-wrap:anywhere"></div>
+        <div class="muted"><span id="syncStatus" data-testid="sync-status"></span> · <span id="turnCount" data-testid="turn-count"></span></div>
+        <div class="muted" id="backendLabel" data-testid="backend-label"></div>
+      </div>
+      <button id="signOutBtn" data-testid="signout">Sign out</button>
+    </div>
+  </div>
+  <div class="card" id="importCard" data-testid="import-offer" hidden>
+    <div id="importText" style="font-weight:700"></div>
+    <div class="row" style="margin-top:10px"><button class="primary" id="importYes" data-testid="import-yes">Import</button><button id="importNo" data-testid="import-no">No, start fresh</button></div>
+  </div>
+  <div class="card muted" id="importMsg" data-testid="import-msg" aria-live="polite" hidden></div>
 
   <div class="card">
     <div class="row" style="justify-content:space-between">
@@ -286,7 +375,34 @@ const ANIMALS=[
 // ---------- environment (DEV / UAT / PROD) ----------
 // From the URL path: .../dev/ -> DEV, .../uat/ -> UAT, else PROD. PROD keeps the original key.
 const ENV=(()=>{const m=location.pathname.match(/\/(dev|uat)(\/|$)/i);return m?m[1].toLowerCase():'prod';})();
-const KEY=ENV==='prod'?'rr-pilot-v1':'rr-pilot-v1-'+ENV;
+// The pilot's own key: legacy mode keeps using it; account mode only ever reads it, for the one-time import (R21).
+const PILOT_KEY=ENV==='prod'?'rr-pilot-v1':'rr-pilot-v1-'+ENV;
+// ---------- backend per environment (I1, architecture.md §8) ----------
+// PUBLIC values only: Project URL + anon key (Supabase → Project Settings → API).
+// Nothing else goes here: no other Supabase key, no database or mail credential (S2, AC20).
+const RR_BACKENDS={
+  dev: {url:'', anon:''},  // Tom pastes rr-nonprod values
+  uat: {url:'', anon:''},  // same values as dev
+  prod:{url:'', anon:''}   // rr-prod, unused until I4 (PROD resolves to legacy in I1)
+};
+const RR_BACKEND_LABELS={dev:'rr-nonprod',uat:'rr-nonprod',prod:'rr-prod'};
+const RR_SUPABASE_JS={src:'vendor/supabase.min.js',integrity:'sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP'};
+const QS=new URLSearchParams(location.search);
+// 'stub' | 'supabase' | 'legacy' (today's app, no accounts) | 'none' (?backend=supabase without config). Evaluated once (spec R2).
+const BACKEND=(()=>{
+  if(ENV==='prod')return 'legacy';   // PROD stays legacy in I1, even with a config (A1)
+  const c=RR_BACKENDS[ENV],has=!!(c&&/^https:\/\/[a-z0-9]{20}\.supabase\.co$/.test(c.url)&&c.anon);
+  const want=QS.get('backend');
+  if(want==='off')return 'legacy';
+  if(want==='stub')return 'stub';
+  if(want==='supabase')return has?'supabase':'none';
+  return has?'supabase':ENV==='dev'?'stub':'legacy';
+})();
+const ACCT=BACKEND==='stub'||BACKEND==='supabase';
+// signed in, the game works on the account working copy; legacy keeps the pilot key byte-for-byte (R4)
+const KEY=ACCT?'rr-acct-'+ENV:PILOT_KEY;
+// account state; declared here because the first save() runs a few lines below
+const A={ready:false,gen:0,user:null,meta:null,outbox:[],seenT:new Set(),seenG:new Set(),seenD:new Set(),lastSettings:'',lastErr:null,pullFailed:false,storageFail:false,flushing:false,pulling:false,again:false,saveT:0,tick:0,retry:null};
 if(ENV!=='prod'){
   document.title='['+ENV.toUpperCase()+'] '+document.title;
   try{const mr=document.createElement('meta');mr.name='robots';mr.content='noindex,nofollow';document.head.appendChild(mr);}catch(e){}
@@ -297,7 +413,7 @@ if(ENV!=='prod'){
 }
 const S={log:[],dropped:[],earned:[],settings:{en:true,de:true,es:true,pics:8,parent:false}};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){if(ACCT)return acctSave();if(BACKEND==='none')return;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 // her animals: one entry per finished session, only ever appended
 if(!Array.isArray(S.earned))S.earned=[];
 // once: the default went from 12 pictures to 8; a saved 12 (the old default) or no value moves to 8, any other choice stays
@@ -424,7 +540,7 @@ function sim(a,b){const m=a.length,n=b.length;if(!m||!n)return 0;const d=[];for(
 function matches(alts,target){const t=norm(target);return alts.some(a=>{const s=norm(a);return s.includes(t)||t.includes(s)&&s.length>=3||sim(s,t)>=0.6;});}
 function listen(lang){return new Promise(res=>{lastRecError='';const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){lastRecError='unsupported';return res(null);}try{rec=new SR();rec.lang=LOC[lang];rec.maxAlternatives=5;rec.interimResults=false;let done=false;const fin=v=>{if(!done){done=true;res(v);}};rec.onresult=e=>{const alts=[];for(const r of e.results)for(let i=0;i<r.length;i++)alts.push(r[i].transcript);fin(alts);};rec.onerror=e=>{lastRecError=(e&&e.error)||'unknown';fin((e&&/not-allowed|service-not-allowed|audio-capture|network/.test(e.error||''))?null:[]);};rec.onend=()=>fin([]);rec.start();setTimeout(()=>{try{rec.stop();}catch(e){}},6000);}catch(e){lastRecError='start-failed';res(null);}});}
 let asrBlocked=false;
-function logTurn(result,judge){S.log.push({day:today(),ts:new Date().toTimeString().slice(0,8),obj:current.obj,lang:current.lang,result,judge});save();}
+function logTurn(result,judge){const t={day:today(),ts:new Date().toTimeString().slice(0,8),obj:current.obj,lang:current.lang,result,judge};if(ACCT)t.id=uuid();S.log.push(t);save();}
 function parentConfirm(){return new Promise(res=>{$('confirm').classList.add('on');$('yesBtn').onclick=()=>{$('confirm').classList.remove('on');res(true);};$('noBtn').onclick=()=>{$('confirm').classList.remove('on');res(false);};});}
 async function runTurn(){
   if(busy||!current)return;busy=true;
@@ -496,11 +612,11 @@ function reveal(){
 }
 function found(){
   const n=S.earned.length,a=ANIMALS[n%ANIMALS.length],name=a.en[0].toUpperCase()+a.en.slice(1);
-  S.earned.push({id:a.id,day:today()});save();
+  S.earned.push(ACCT?{id:uuid(),animal:a.id,day:today()}:{id:a.id,day:today()});save();
   $('partyArt').textContent=a.e;
   $('partyText').textContent=n>=ANIMALS.length?`${name} is here again!`:n===ANIMALS.length-1?`${name} is here — that's all ${ANIMALS.length}!`:`${name} is here!`;
   $('partyEggs').innerHTML=Array.from({length:cap},(_,i)=>`<span class="egg on" style="animation:pop .4s ${i*90}ms both"></span>`).join('');
-  const have=ANIMALS.filter(x=>S.earned.some(e=>e.id===x.id));
+  const have=ANIMALS.filter(x=>S.earned.some(e=>aid(e)===x.id));
   $('partyShelf').innerHTML=have.map(x=>x===a?`<span class="new">${x.e}</span>`:x.e).join('');
   // a short, slow fall of confetti in the language colours: it runs once and does not flash
   const cols=['var(--en)','var(--de)','var(--es)','var(--ok)'];
@@ -515,11 +631,11 @@ let partyReady=0,partyTok=0;
 $('party').addEventListener('click',()=>{if(Date.now()<partyReady)return;partyTok++;$('party').classList.remove('on');$('confetti').innerHTML='';sayTok++;stopAudio();});
 $('bye').addEventListener('click',()=>$('bye').classList.remove('on'));
 function renderAnimals(){
-  const have=new Set(S.earned.map(x=>x.id)).size;
+  const have=new Set(S.earned.map(aid)).size;
   $('animalsMeta').textContent=S.earned.length?(have>=ANIMALS.length?`All ${ANIMALS.length} collected`:`${have} of ${ANIMALS.length} collected`):'Finish a session to earn the first animal.';
 }
 function openZoo(){
-  const n=S.earned.length,coming=ANIMALS[n%ANIMALS.length],count={};S.earned.forEach(x=>count[x.id]=(count[x.id]||0)+1);
+  const n=S.earned.length,coming=ANIMALS[n%ANIMALS.length],count={};S.earned.forEach(x=>count[aid(x)]=(count[aid(x)]||0)+1);
   const have=Object.keys(count).length;
   $('zooMeta').textContent=have>=ANIMALS.length?`All ${ANIMALS.length}!`:n?`${have} of ${ANIMALS.length}`:'Finish a session to meet the first one.';
   $('zooGrid').innerHTML=ANIMALS.map(a=>count[a.id]?`<button class="tile" data-animal="${a.id}" data-state="earned" aria-label="${a.en}">${a.e}${count[a.id]>1?`<span class="count">×${count[a.id]}</span>`:''}</button>`
@@ -547,6 +663,466 @@ stopB.addEventListener('pointerdown',e=>{e.preventDefault();try{stopB.setPointer
 stopB.addEventListener('contextmenu',e=>e.preventDefault());
 $('startBtn').addEventListener('click',()=>{try{window.speechSynthesis&&speechSynthesis.getVoices();}catch(e){}unlockPlayer();startSession();});
 window.addEventListener('error',e=>{const n=$('asrNote');if(n)n.textContent='Error: '+e.message;});
-render();
+// ================= I1 accounts: backend adapter, onboarding, sync (spec-i1.md, architecture.md §5) =================
+// Only active when BACKEND is 'stub' or 'supabase'. Legacy mode never reaches this code except the final boot line.
+const OUTBOX_KEY='rr-outbox-'+ENV,SYNC_KEY='rr-sync-'+ENV,IMPORT_KEY='rr-import-'+ENV;
+const TERMS_VERSION='0-draft-2026-09';
+const LANGS=['en','de','es'];
+const MSG={
+  email:'Please enter a valid email address.',
+  invalid_email:'Please enter a valid email address.',
+  not_invited:'This pilot is invite-only. This email has not been invited.',
+  rate_limited:'Too many sign-in emails. Wait a minute, then send again.',
+  network:"No connection. Try again when you're online.",
+  server:'Something went wrong. Try again.',
+  auth:'Please sign in again.',
+  bad_code:"That code didn't work. Check the latest email or send a new one.",
+  code_format:'Enter the 6-digit code from the email.',
+  link_expired:'This link has expired. Send a new one.'
+};
+const errMsg=code=>MSG[code]||MSG.server;
+const plural=(n,w)=>n===1?`1 ${w}`:`${n} ${w}s`;
+// ---------- ids and validation (the same rules the database enforces, migration 001) ----------
+function bytesToUuid(b,ver){b[6]=b[6]&15|ver<<4;b[8]=b[8]&63|128;const h=Array.from(b.slice(0,16),x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20,32);}
+function uuid(){return crypto.randomUUID?crypto.randomUUID():bytesToUuid(crypto.getRandomValues(new Uint8Array(16)),4);}
+// Deterministic id for imported pilot rows: SHA-256 of the input, shaped as a UUID (version 8 = custom), so a re-import never duplicates.
+async function uuidFromHash(s){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return bytesToUuid(new Uint8Array(d),8);}
+// earned[] entries: account mode {id:uuid, animal, day}; pilot/legacy {id:animal, day} (spec A7)
+function aid(e){return e&&(e.animal||e.id);}
+const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const RX={day:/^\d{4}-\d{2}-\d{2}$/,ts:/^\d{2}:\d{2}:\d{2}$/,pair:/^[^|]+\|(en|de|es)$/};
+const cps=s=>[...s].length;
+function normEmail(v){const e=String(v==null?'':v).trim().toLowerCase();return e.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)?e:null;}
+function cleanNick(v){return String(v==null?'':v).replace(/[\u0000-\u001F\u007F-\u009F]/g,'').trim();}
+function nickError(n){const len=cps(n);return !len?'Please enter a nickname.':len>20?'Use at most 20 characters.':null;}
+function validNick(n){return typeof n==='string'&&n===n.trim()&&!/[\u0000-\u001F\u007F-\u009F]/.test(n)&&cps(n)>=1&&cps(n)<=20;}
+function langsOf(s){return LANGS.filter(l=>s&&s[l]);}
+function okTurn(t){return !!t&&typeof t==='object'&&RX.day.test(t.day)&&RX.ts.test(t.ts)&&typeof t.obj==='string'&&cps(t.obj)>=1&&cps(t.obj)<=64&&LANGS.includes(t.lang)&&(t.result==='said'||t.result==='missed')&&(t.judge==='asr'||t.judge==='parent');}
+function okGift(g){const a=aid(g);return !!g&&typeof g==='object'&&RX.day.test(g.day)&&typeof a==='string'&&cps(a)>=1&&cps(a)<=32;}
+function okPair(p){return typeof p==='string'&&p.length>=3&&p.length<=80&&RX.pair.test(p);}
+function okSettings(s){return !!s&&typeof s==='object'&&!Array.isArray(s)&&JSON.stringify(s).length<=4096;}
+// timestamps from Postgres carry microseconds; Date.parse wants at most milliseconds
+const tms=s=>Date.parse(String(s).replace(/(\.\d{3})\d+/,'$1'));
+const hhmm=s=>new Date(tms(s)).toTimeString().slice(0,5);
+// Remove auth leftovers from the address bar (R10): the hash always, auth query params if any. ?backend=… stays.
+function cleanUrl(){const q=new URLSearchParams(location.search);['code','error','error_code','error_description'].forEach(k=>q.delete(k));const s=q.toString();history.replaceState(null,'',location.pathname+(s?'?'+s:''));}
+function readJSON(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
+function writeLS(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
+function removeLS(k){try{localStorage.removeItem(k);return true;}catch(e){return false;}}
+
+// ---------- stub backend: DEV/UAT test harness, "server" in localStorage (spec R28–R31, QA hooks E-1…E-6) ----------
+function makeStub(){
+  const DBK='rr-stub-db-'+ENV,SK='rr-stub-session-'+ENV,CODE='123456';
+  const INVITED=['parent1@example.test','parent2@example.test','tom@example.test'];
+  const empty=()=>({users:[],profiles:{},children:{},turns:[],gifts:[],dropped:[],tokens:{},seq:0,last:0});
+  // read on every call, never cached, so a copy of this key seeds a "second phone" (E-5); a corrupt key counts as empty
+  function db(){const d=readJSON(DBK);
+    if(!d||typeof d!=='object'||!Array.isArray(d.users)||!Array.isArray(d.turns)||!Array.isArray(d.gifts)||!Array.isArray(d.dropped)||!d.profiles||typeof d.profiles!=='object'||!d.children||typeof d.children!=='object')return empty();
+    if(!d.tokens||typeof d.tokens!=='object')d.tokens={};return d;}
+  function put(d){localStorage.setItem(DBK,JSON.stringify(d));}
+  const later=()=>new Promise(r=>setTimeout(r,150));
+  const offline=()=>navigator.onLine===false;
+  const copy=o=>JSON.parse(JSON.stringify(o));
+  // server clock: strictly increasing, so the created_at cursor never skips a row
+  function stamp(d){let t=Date.now();if(t<=(d.last||0))t=d.last+1;d.last=t;d.seq=(d.seq||0)+1;return new Date(t).toISOString();}
+  function readSession(){const s=readJSON(SK);if(s&&s.user&&typeof s.expires_at==='number'){if(Date.now()<s.expires_at)return s;removeLS(SK);}return null;}
+  function openSession(d,email){let u=d.users.find(x=>x.email===email);if(!u){u={id:uuid(),email};d.users.push(u);}
+    if(!d.profiles[u.id])d.profiles[u.id]={accepted_terms_version:null,accepted_at:null};
+    localStorage.setItem(SK,JSON.stringify({user:{id:u.id,email:u.email},token:uuid(),expires_at:Date.now()+30*864e5}));
+    return {id:u.id,email:u.email};}
+  const own=(d,uid,cid)=>{const c=d.children[uid];return c&&c.id===cid?c:null;};
+  const hooks={fail:QS.get('stubFail')||null,lastLink:null,code:CODE,invited:INVITED.slice(),
+    exportDb:()=>JSON.stringify(db()),importDb:j=>localStorage.setItem(DBK,typeof j==='string'?j:JSON.stringify(j)),resetDb:()=>removeLS(DBK)};
+  // every data call: 150 ms latency, offline check, fault injection, signed-in user
+  async function gate(op){await later();if(offline())return {err:'network'};if(hooks.fail===op)return {err:'server'};const s=readSession();return s?{uid:s.user.id}:{err:'auth'};}
+  // a failing localStorage write (quota) answers like a server error instead of throwing
+  const safe=fn=>async(...a)=>{try{return await fn(...a);}catch(e){return {error:'server'};}};
+  return {kind:'stub',label:'stub (test)',
+    init:async()=>true,
+    auth:{
+      sendLink:safe(async email=>{await later();if(offline())return {error:'network'};if(hooks.fail==='sendLink')return {error:'server'};
+        const e=normEmail(email);if(!e)return {error:'invalid_email'};if(!INVITED.includes(e))return {error:'not_invited'};
+        const d=db(),t=uuid().replace(/-/g,''),now=Date.now();
+        for(const k of Object.keys(d.tokens))if(d.tokens[k].exp<now)delete d.tokens[k];
+        d.tokens[t]={email:e,exp:now+36e5,used:false};put(d);
+        const q=new URLSearchParams(location.search);q.set('backend','stub');
+        hooks.lastLink=location.origin+location.pathname+'?'+q.toString()+'#stub_token='+t;return {ok:true};}),
+      verifyCode:safe(async(email,code)=>{await later();if(offline())return {error:'network'};const e=normEmail(email);
+        if(!e||!INVITED.includes(e)||String(code)!==CODE)return {error:'bad_code'};const d=db(),user=openSession(d,e);put(d);return {user};}),
+      // single use, 1 h (QA D-8)
+      handleRedirect:safe(async()=>{const m=/(?:^#|&)stub_token=([^&]*)/.exec(location.hash);if(!m)return null;cleanUrl();
+        await later();if(offline())return {error:'network'};const d=db(),t=d.tokens[m[1]];
+        if(!t||t.used||Date.now()>t.exp)return {error:'link_expired'};t.used=true;const user=openSession(d,t.email);put(d);return {user};}),
+      getUser:async()=>{const s=readSession();return s?{id:s.user.id,email:s.user.email}:null;},
+      signOut:async()=>{removeLS(SK);return {ok:true};}
+    },
+    data:{
+      getProfile:safe(async()=>{const g=await gate('getProfile');if(g.err)return {error:g.err};const p=db().profiles[g.uid];return p?copy(p):null;}),
+      acceptTerms:safe(async v=>{const g=await gate('acceptTerms');if(g.err)return {error:g.err};if(typeof v!=='string'||!v||v.length>40)return {error:'invalid'};
+        const d=db();d.profiles[g.uid]={accepted_terms_version:v,accepted_at:new Date().toISOString()};put(d);return {ok:true};}),
+      getChild:safe(async()=>{const g=await gate('getChild');if(g.err)return {error:g.err};const c=db().children[g.uid];return c?copy(c):null;}),
+      createChild:safe(async c=>{const g=await gate('createChild');if(g.err)return {error:g.err};
+        const n=c&&c.nickname,L=c&&c.languages,s=c&&c.settings;
+        if(!validNick(n)||!Array.isArray(L)||!L.length||L.length>3||L.some(l=>!LANGS.includes(l))||!okSettings(s))return {error:'invalid'};
+        const d=db();if(d.children[g.uid])return {error:'exists'};const now=new Date().toISOString();
+        const child={id:uuid(),nickname:n,languages:[...new Set(L)],settings:s,settings_updated_at:now,updated_at:now};
+        d.children[g.uid]=child;put(d);return {child:copy(child)};}),
+      // last write wins on the client time, clamped to server now + 5 min (as the database trigger)
+      saveSettings:safe(async(cid,s,at)=>{const g=await gate('saveSettings');if(g.err)return {error:g.err};
+        const d=db(),c=own(d,g.uid,cid);if(!c)return {error:'forbidden'};if(!okSettings(s)||!langsOf(s).length)return {error:'invalid'};
+        const t=Math.min(tms(at)||Date.now(),Date.now()+3e5);
+        if(t>=tms(c.settings_updated_at)){c.settings=copy(s);c.languages=langsOf(s);c.settings_updated_at=new Date(t).toISOString();}
+        c.updated_at=new Date().toISOString();put(d);return {ok:true};}),
+      // idempotent insert (ON CONFLICT DO NOTHING); one bad row rejects the whole call, like one PostgREST request
+      push:safe(async(cid,p)=>{const g=await gate('push');if(g.err)return {error:g.err};const d=db();if(!own(d,g.uid,cid))return {error:'forbidden'};
+        const T=(p&&p.turns)||[],G=(p&&p.gifts)||[],D=(p&&p.dropped)||[];
+        if(T.some(r=>!r||r.child_id!==cid||!UUID_RE.test(r.id)||!okTurn(r))||G.some(r=>!r||r.child_id!==cid||!UUID_RE.test(r.id)||!okGift({day:r.day,animal:r.animal}))||D.some(r=>!r||r.child_id!==cid||!okPair(r.pair_key)))return {error:'invalid'};
+        const ti=new Set(d.turns.map(r=>r.id)),gi=new Set(d.gifts.map(r=>r.id)),di=new Set(d.dropped.filter(r=>r.child_id===cid).map(r=>r.pair_key));
+        for(const r of T)if(!ti.has(r.id)){ti.add(r.id);d.turns.push({id:r.id,child_id:cid,day:r.day,ts:r.ts,obj:r.obj,lang:r.lang,result:r.result,judge:r.judge,created_at:stamp(d)});}
+        for(const r of G)if(!gi.has(r.id)){gi.add(r.id);d.gifts.push({id:r.id,child_id:cid,day:r.day,animal:r.animal,created_at:stamp(d)});}
+        for(const r of D)if(!di.has(r.pair_key)){di.add(r.pair_key);d.dropped.push({child_id:cid,pair_key:r.pair_key,created_at:stamp(d)});}
+        put(d);return {ok:true};}),
+      pull:safe(async(cid,cursor)=>{const g=await gate('pull');if(g.err)return {error:g.err};const d=db(),c=own(d,g.uid,cid);if(!c)return {error:'forbidden'};
+        const since=cursor?tms(cursor):-Infinity;
+        const pick=a=>a.filter(r=>r.child_id===cid&&tms(r.created_at)>since).sort((x,y)=>tms(x.created_at)-tms(y.created_at)).map(copy);
+        const turns=pick(d.turns),gifts=pick(d.gifts),dropped=pick(d.dropped);let max=cursor||null;
+        for(const r of [...turns,...gifts,...dropped])if(!max||tms(r.created_at)>tms(max))max=r.created_at;
+        return {turns,gifts,dropped,settings:{settings:copy(c.settings),languages:c.languages.slice(),updated_at:c.settings_updated_at},cursor:max};})
+    },
+    _stub:hooks
+  };
+}
+
+// ---------- Supabase backend (architecture.md §5; supabase-js 2.116.0 vendored, loaded with SRI only in this mode) ----------
+function makeSupabase(cfg){
+  const SK='sb-rr-'+ENV+'-auth',CHILD_COLS='id,nickname,languages,settings,settings_updated_at,updated_at';
+  let client=null,loading=null,bootHash='';
+  const offline=()=>navigator.onLine===false;
+  function load(){if(window.supabase&&window.supabase.createClient)return Promise.resolve(true);
+    return new Promise(res=>{const s=document.createElement('script');s.src=RR_SUPABASE_JS.src;s.integrity=RR_SUPABASE_JS.integrity;s.crossOrigin='anonymous';
+      s.onload=()=>res(!!(window.supabase&&window.supabase.createClient));s.onerror=()=>res(false);document.head.appendChild(s);});}
+  // auth-js error codes are from the architect's knowledge of auth-js; verify against rr-nonprod (architecture.md §5)
+  function authErr(e){if(offline()||e.name==='AuthRetryableFetchError'||e.status===0)return 'network';
+    if(e.status===429||e.code==='over_email_send_rate_limit'||e.code==='over_request_rate_limit')return 'rate_limited';
+    if(/signups? not allowed/i.test(e.message||'')||e.code==='otp_disabled'||e.code==='signup_disabled'||e.code==='user_not_found')return 'not_invited';
+    return 'server';}
+  function dbErr(e){const m=(e&&e.message)||'',c=e&&e.code;
+    if(offline()||/failed to fetch|networkerror|load failed|network request failed/i.test(m))return 'network';
+    if(c==='23505')return 'exists';if(c==='23514'||c==='22P02'||c==='23502'||c==='22001')return 'invalid';if(c==='42501')return 'forbidden';
+    if(c==='PGRST301'||c==='PGRST303'||/jwt/i.test(m))return 'auth';return 'server';}
+  const U=u=>({id:u.id,email:u.email});
+  async function uid(){const {data}=await client.auth.getSession();return data&&data.session?data.session.user.id:null;}
+  // every call answers {error:code} instead of throwing (adapter contract)
+  const run=fn=>async(...a)=>{if(!client)return {error:'network'};try{return await fn(...a);}catch(e){return {error:offline()||e instanceof TypeError?'network':'server'};}};
+  const chunks=a=>{const o=[];for(let i=0;i<a.length;i+=500)o.push(a.slice(i,i+500));return o;};
+  return {kind:'supabase',label:RR_BACKEND_LABELS[ENV],
+    init(){if(!loading){bootHash=location.hash;loading=load().then(ok=>{if(ok)client=window.supabase.createClient(cfg.url,cfg.anon,{auth:{
+      persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,
+      flowType:'implicit',          // the link also works when opened in another browser (Gmail in-app)
+      storageKey:SK}});             // DEV and UAT share origin + project, so separate sessions
+      return ok;});}return loading;},
+    auth:{
+      sendLink:run(async email=>{const e=normEmail(email);if(!e)return {error:'invalid_email'};
+        const {error}=await client.auth.signInWithOtp({email:e,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+        return error?{error:authErr(error)}:{ok:true};}),
+      verifyCode:run(async(email,code)=>{const {data,error}=await client.auth.verifyOtp({email:normEmail(email)||'',token:String(code),type:'email'});
+        if(error)return {error:authErr(error)==='network'?'network':'bad_code'};return data&&data.user?{user:U(data.user)}:{error:'bad_code'};}),
+      handleRedirect:run(async()=>{const h=new URLSearchParams(bootHash.replace(/^#/,''));bootHash='';
+        if(h.get('error_code')||h.get('error')){cleanUrl();return {error:'link_expired'};}
+        if(!h.get('access_token'))return null;
+        const {data}=await client.auth.getSession();cleanUrl();const u=data&&data.session&&data.session.user;return u?{user:U(u)}:{error:'link_expired'};}),
+      // offline with an expired access token the refresh fails; the stored session still says who is signed in
+      async getUser(){if(!client)return null;try{const {data,error}=await client.auth.getSession();if(data&&data.session)return U(data.session.user);
+        if(error){const raw=readJSON(SK);if(raw&&raw.user&&raw.user.id)return U(raw.user);}return null;}catch(e){const raw=readJSON(SK);return raw&&raw.user&&raw.user.id?U(raw.user):null;}},
+      // scope local: signing out here does not sign out the other phones. The caller also removes the session keys, so an offline failure is harmless.
+      async signOut(){if(!client)return {ok:true};try{const {error}=await client.auth.signOut({scope:'local'});return error?{ok:true,warning:authErr(error)}:{ok:true};}catch(e){return {ok:true,warning:'network'};}}
+    },
+    data:{
+      getProfile:run(async()=>{const {data,error}=await client.from('profiles').select('accepted_terms_version,accepted_at').maybeSingle();return error?{error:dbErr(error)}:data;}),
+      // accepted_at is stamped by the server (column not granted)
+      acceptTerms:run(async v=>{const id=await uid();if(!id)return {error:'auth'};
+        const {error}=await client.from('profiles').update({accepted_terms_version:v}).eq('user_id',id).select('accepted_terms_version').single();return error?{error:dbErr(error)}:{ok:true};}),
+      getChild:run(async()=>{const {data,error}=await client.from('children').select(CHILD_COLS).maybeSingle();return error?{error:dbErr(error)}:data;}),
+      createChild:run(async c=>{const {data,error}=await client.from('children').insert({nickname:c.nickname,languages:c.languages,settings:c.settings,settings_updated_at:new Date().toISOString()}).select(CHILD_COLS).single();
+        return error?{error:dbErr(error)}:{child:data};}),
+      saveSettings:run(async(cid,s,at)=>{const {data,error}=await client.from('children').update({settings:s,languages:langsOf(s),settings_updated_at:at}).eq('id',cid).select('id');
+        if(error)return {error:dbErr(error)};return data&&data.length?{ok:true}:{error:'forbidden'};}),
+      // INSERT … ON CONFLICT DO NOTHING; rows carry no created_at (server-stamped, not granted)
+      push:run(async(cid,p)=>{for(const [t,rows,on] of [['turns',(p&&p.turns)||[],'id'],['gifts',(p&&p.gifts)||[],'id'],['dropped',(p&&p.dropped)||[],'child_id,pair_key']])
+        for(const part of chunks(rows)){const {error}=await client.from(t).upsert(part,{onConflict:on,ignoreDuplicates:true});if(error)return {error:dbErr(error)};}
+        return {ok:true};}),
+      pull:run(async(cid,cursor)=>{const res={turns:[],gifts:[],dropped:[]};
+        for(const [t,cols,tie] of [['turns','id,day,ts,obj,lang,result,judge,created_at','id'],['gifts','id,day,animal,created_at','id'],['dropped','pair_key,created_at','pair_key']])
+          for(let from=0;;from+=1000){let q=client.from(t).select(cols).eq('child_id',cid);if(cursor)q=q.gt('created_at',cursor);
+            const {data,error}=await q.order('created_at').order(tie).range(from,from+999);if(error)return {error:dbErr(error)};
+            res[t].push(...data);if(data.length<1000)break;}
+        const {data:c,error}=await client.from('children').select('settings,languages,settings_updated_at').eq('id',cid).maybeSingle();
+        if(error)return {error:dbErr(error)};if(!c)return {error:'forbidden'};
+        let max=cursor||null;for(const r of [...res.turns,...res.gifts,...res.dropped])if(!max||tms(r.created_at)>tms(max))max=r.created_at;
+        return {turns:res.turns,gifts:res.gifts,dropped:res.dropped,settings:{settings:c.settings,languages:c.languages,updated_at:c.settings_updated_at},cursor:max};})
+    }
+  };
+}
+
+const BE=BACKEND==='stub'?makeStub():BACKEND==='supabase'?makeSupabase(RR_BACKENDS[ENV]):null;
+window.RR_BACKEND=BE;   // QA hook E-1: methods are looked up at call time, so a test can replace them
+
+// ---------- screens ----------
+const SCREENS=['scrWait','scrSignin','scrCode','scrTerms','scrChild','scrBackendErr'];
+function showScreen(id){$('parent').hidden=true;$('acct').hidden=false;SCREENS.forEach(s=>{$(s).hidden=s!==id;});
+  $('acctOut').hidden=!(A.user&&['scrWait','scrTerms','scrChild'].includes(id));window.scrollTo(0,0);}
+function showWait(msg,retry){showScreen('scrWait');$('waitMsg').textContent=msg;A.retry=retry||null;$('btnRetry').hidden=!retry;}
+function showBackendError(){showScreen('scrBackendErr');$('backendErr').textContent='No backend configured for '+ENV.toUpperCase();}
+let codeEmail='',resendT=0;
+function showSignin(msg){clearTimeout(resendT);A.user=null;showScreen('scrSignin');$('signinErr').textContent=msg||'';$('btnSend').disabled=false;}
+function lockResend(){const b=$('btnResend');b.disabled=true;clearTimeout(resendT);resendT=setTimeout(()=>{b.disabled=false;},60000);}
+function showCode(em){codeEmail=em;showScreen('scrCode');$('codeEmail').textContent=em;$('inCode').value='';$('codeErr').textContent='';$('codeInfo').textContent='';lockResend();
+  $('stubBox').hidden=BE.kind!=='stub';if(BE.kind==='stub')$('stubLink').href=BE._stub.lastLink||'#';}
+function showTerms(){showScreen('scrTerms');$('chkTerms').checked=false;$('btnTerms').disabled=true;$('termsErr').textContent='';$('draftPanel').hidden=true;}
+function showChildForm(){showScreen('scrChild');$('childErr').textContent='';$('btnChild').disabled=false;}
+
+$('scrSignin').addEventListener('submit',async e=>{e.preventDefault();const em=normEmail($('inEmail').value);
+  if(!em){$('signinErr').textContent=MSG.email;return;}
+  $('signinErr').textContent='';$('btnSend').disabled=true;const r=await BE.auth.sendLink(em);$('btnSend').disabled=false;
+  if(r&&r.ok)return showCode(em);$('signinErr').textContent=errMsg(r&&r.error);});
+$('scrCode').addEventListener('submit',async e=>{e.preventDefault();const c=$('inCode').value.replace(/\s+/g,'');
+  if(!/^\d{6}$/.test(c)){$('codeErr').textContent=MSG.code_format;return;}
+  $('codeErr').textContent='';$('btnCode').disabled=true;const r=await BE.auth.verifyCode(codeEmail,c);$('btnCode').disabled=false;
+  if(r&&r.user){clearTimeout(resendT);return afterSignIn(r.user);}$('codeErr').textContent=errMsg(r&&r.error);});
+$('btnResend').addEventListener('click',async()=>{lockResend();$('codeErr').textContent='';$('codeInfo').textContent='';const r=await BE.auth.sendLink(codeEmail);
+  if(r&&r.ok){$('codeInfo').textContent='Sent again. Use the newest email.';if(BE.kind==='stub')$('stubLink').href=BE._stub.lastLink||'#';}
+  else $('codeErr').textContent=errMsg(r&&r.error);});
+$('btnOther').addEventListener('click',()=>{codeEmail='';showSignin('');$('inEmail').focus();});
+$('chkTerms').addEventListener('change',()=>{$('btnTerms').disabled=!$('chkTerms').checked;});
+const DRAFT={privacy:['Privacy notice','The final privacy notice for the pilot will be published here before launch. This text is a placeholder.'],
+  terms:['Terms','The final terms of use for the pilot will be published here before launch. This text is a placeholder.']};
+function openDraft(k){$('draftWhich').textContent=DRAFT[k][0];$('draftBody').textContent=DRAFT[k][1];$('draftPanel').hidden=false;}
+$('lnkPrivacy').addEventListener('click',()=>openDraft('privacy'));
+$('lnkTerms').addEventListener('click',()=>openDraft('terms'));
+$('draftClose').addEventListener('click',()=>{$('draftPanel').hidden=true;});
+$('btnTerms').addEventListener('click',async()=>{if(!$('chkTerms').checked)return;const gen=A.gen;$('btnTerms').disabled=true;$('termsErr').textContent='';
+  const r=await BE.data.acceptTerms(TERMS_VERSION);if(gen!==A.gen)return;
+  if(r&&r.error){if(r.error==='auth')return authLost();$('btnTerms').disabled=false;$('termsErr').textContent=errMsg(r.error);return;}
+  onboard();});
+$('scrChild').addEventListener('submit',async e=>{e.preventDefault();const n=cleanNick($('inNick').value),bad=nickError(n);
+  const ids={en:'chEn',de:'chDe',es:'chEs'},L=LANGS.filter(l=>$(ids[l]).checked);
+  if(bad){$('childErr').textContent=bad;return;}
+  if(!L.length){$('childErr').textContent='Pick at least one language.';return;}
+  $('childErr').textContent='';$('btnChild').disabled=true;const gen=A.gen;
+  const settings={en:L.includes('en'),de:L.includes('de'),es:L.includes('es'),pics:8,parent:false};
+  let c=null,err=null;const r=await BE.data.createChild({nickname:n,languages:L,settings});
+  if(r&&r.child)c=r.child;
+  else if(r&&r.error==='exists'){const g=await BE.data.getChild();if(g&&!g.error)c=g;else err=(g&&g.error)||'server';}
+  else err=(r&&r.error)||'server';
+  if(gen!==A.gen)return;$('btnChild').disabled=false;
+  if(!c){if(err==='auth')return authLost();$('childErr').textContent=err==='invalid'?'Please check the nickname.':errMsg(err);return;}
+  finishOnboarding(c);});
+$('btnRetry').addEventListener('click',()=>{if(A.retry)A.retry();});
+$('acctOut').addEventListener('click',()=>doSignOut());
+
+// ---------- sign-in flow ----------
+async function acctBoot(){
+  showWait('Loading…');
+  const ok=await BE.init();
+  if(!ok)return showWait("Couldn't load the sign-in module. "+MSG.network,()=>location.reload());
+  const r=await BE.auth.handleRedirect();
+  const user=(r&&r.user)||await BE.auth.getUser();
+  if(!user)return showSignin(r&&r.error?errMsg(r.error):'');
+  return afterSignIn(user);
+}
+function afterSignIn(user){
+  A.user=user;let meta=readJSON(SYNC_KEY);
+  if(meta&&meta.user_id!==user.id){clearWorkingCopy();meta=null;}   // another account's leftovers never show
+  // already onboarded on this phone: straight in, even offline (R25)
+  if(meta&&meta.terms&&meta.child&&meta.child.id)return enterApp(meta,null);
+  return onboard();
+}
+// terms, then profile; each step asks the server, so an unfinished step comes back on the next open
+async function onboard(){
+  const gen=A.gen;showWait('Loading…');
+  const p=await BE.data.getProfile();if(gen!==A.gen)return;
+  if(p&&p.error)return p.error==='auth'?authLost():showWait(errMsg(p.error),onboard);
+  if(!p||!p.accepted_terms_version)return showTerms();
+  const c=await BE.data.getChild();if(gen!==A.gen)return;
+  if(c&&c.error)return c.error==='auth'?authLost():showWait(errMsg(c.error),onboard);
+  if(!c)return showChildForm();
+  finishOnboarding(c);
+}
+function finishOnboarding(c){
+  enterApp({user_id:A.user.id,email:A.user.email,terms:true,child:{id:c.id,nickname:c.nickname},cursor:null,last_sync:null,settings_at:c.settings_updated_at||c.updated_at||null},c);
+}
+function resetS(){S.log=[];S.dropped=[];S.earned=[];S.settings={en:true,de:true,es:true,pics:8,parent:false};S.v=2;}
+const settingsObj=()=>({en:!!S.settings.en,de:!!S.settings.de,es:!!S.settings.es,pics:pics(),parent:!!S.settings.parent});
+// server (or pilot) settings into S.settings; languages win over the en/de/es flags when given (spec R17, A4)
+function applySettings(s,L){const o=Object.assign({},s&&typeof s==='object'?s:{});
+  if(Array.isArray(L)&&L.length)for(const l of LANGS)o[l]=L.includes(l);
+  for(const k of ['en','de','es','parent'])if(o[k]!==undefined)S.settings[k]=!!o[k];
+  if(o.pics!==undefined)S.settings.pics=Math.min(30,Math.max(6,Math.round(+o.pics)||8));
+  if(!langs().length)S.settings.en=true;}
+function enterApp(meta,c){
+  A.meta=meta;resetS();
+  const w=readJSON(KEY);
+  if(w&&typeof w==='object'&&!Array.isArray(w)){for(const k of ['log','dropped','earned'])if(Array.isArray(w[k]))S[k]=w[k];if(w.settings&&typeof w.settings==='object')Object.assign(S.settings,w.settings);}
+  else if(c)applySettings(c.settings,c.languages);
+  else meta.settings_at=null;   // working copy lost: take the server's settings on the next pull
+  const ob=readJSON(OUTBOX_KEY);A.outbox=Array.isArray(ob)?ob:[];
+  A.seenT=new Set(S.log.map(t=>t.id).filter(Boolean));A.seenG=new Set(S.earned.filter(g=>g.animal).map(g=>g.id));A.seenD=new Set(S.dropped);
+  A.lastSettings=JSON.stringify(settingsObj());A.lastErr=null;A.pullFailed=false;A.storageFail=false;A.flushing=false;A.pulling=false;
+  A.ready=true;writeLS(SYNC_KEY,meta);save();
+  $('acct').hidden=true;$('parent').hidden=false;$('acctCard').hidden=false;$('resetBtn').hidden=true;   // reset hidden when signed in (R27)
+  $('whoami').textContent=`Signed in as ${meta.email} · ${meta.child.nickname}`;
+  $('backendLabel').textContent='Backend: '+BE.label;
+  render();updateAcctUI();importCheck();
+  clearInterval(A.tick);A.tick=setInterval(()=>{if(!A.ready)return;if(A.outbox.length)flush();else if(A.pullFailed)pull();},20000);
+  syncAll();
+}
+
+// ---------- outbox (hooked into save(): new turns, gifts, dropped pairs and settings changes, spec R22/R23) ----------
+function acctSave(){
+  if(!A.ready)return;
+  const cid=A.meta.child.id;let added=0;
+  for(const t of S.log){if(!t.id)t.id=uuid();if(!A.seenT.has(t.id)){A.seenT.add(t.id);A.outbox.push({k:'turn',row:{id:t.id,child_id:cid,day:t.day,ts:t.ts,obj:t.obj,lang:t.lang,result:t.result,judge:t.judge}});added++;}}
+  for(const g of S.earned){if(!g.animal){g.animal=g.id;g.id=uuid();}if(!A.seenG.has(g.id)){A.seenG.add(g.id);A.outbox.push({k:'gift',row:{id:g.id,child_id:cid,day:g.day,animal:g.animal}});added++;}}
+  for(const p of S.dropped)if(!A.seenD.has(p)){A.seenD.add(p);if(okPair(p)){A.outbox.push({k:'drop',row:{child_id:cid,pair_key:p}});added++;}}
+  const sk=JSON.stringify(settingsObj());
+  if(sk!==A.lastSettings){A.lastSettings=sk;const at=new Date().toISOString();A.outbox=A.outbox.filter(e=>e.k!=='settings');A.outbox.push({k:'settings',settings:JSON.parse(sk),at});A.meta.settings_at=at;added++;}
+  // outbox first: a crash between the two writes re-sends (harmless) instead of losing a row
+  let ok=true;if(added)ok=writeLS(OUTBOX_KEY,A.outbox)&&writeLS(SYNC_KEY,A.meta);
+  ok=writeLS(KEY,S)&&ok;A.storageFail=!ok;
+  if(added){clearTimeout(A.saveT);A.saveT=setTimeout(flush,2000);}
+  updateAcctUI();
+}
+function updateAcctUI(){
+  if(!A.ready)return;
+  const n=A.outbox.length,ch=n===1?'1 change':n+' changes';let s;
+  if(A.storageFail)s="Can't save on this phone";
+  else if(navigator.onLine===false||A.lastErr==='network')s=`Offline — ${ch} waiting`;
+  else if(A.lastErr)s='Sync failed — will retry';
+  else if(n)s=`Syncing — ${ch} waiting`;
+  else if(A.meta.last_sync)s='Synced '+hhmm(A.meta.last_sync);
+  else s='Not synced yet';
+  $('syncStatus').textContent=s;
+  $('turnCount').textContent=plural(S.log.length,'turn')+' in total';
+}
+// push the outbox; entries leave it only after the server accepted them
+async function flush(){
+  if(!A.ready)return;if(A.flushing){A.again=true;return;}
+  A.flushing=true;const gen=A.gen;
+  try{
+    do{A.again=false;
+      const box=A.outbox.filter(e=>e.k!=='settings');
+      if(box.length){const pay={turns:[],gifts:[],dropped:[]};for(const e of box)(e.k==='turn'?pay.turns:e.k==='gift'?pay.gifts:pay.dropped).push(e.row);
+        const r=await BE.data.push(A.meta.child.id,pay);if(gen!==A.gen)return;
+        if(!r||r.error){A.lastErr=(r&&r.error)||'server';break;}
+        const sent=new Set(box);A.outbox=A.outbox.filter(e=>!sent.has(e));writeLS(OUTBOX_KEY,A.outbox);}
+      const s=A.outbox.find(e=>e.k==='settings');
+      if(s){const r=await BE.data.saveSettings(A.meta.child.id,s.settings,s.at);if(gen!==A.gen)return;
+        if(!r||r.error){A.lastErr=(r&&r.error)||'server';break;}
+        A.outbox=A.outbox.filter(e=>e!==s);writeLS(OUTBOX_KEY,A.outbox);}
+      A.lastErr=null;if(!A.outbox.length){A.meta.last_sync=new Date().toISOString();writeLS(SYNC_KEY,A.meta);}
+    }while(A.again&&A.outbox.length);
+  }finally{if(gen===A.gen){A.flushing=false;updateAcctUI();}}
+}
+function inSession(){return $('child').classList.contains('on')||$('party').classList.contains('on');}
+// merge server rows into the working copy by id (log by day+ts, earned by day, dropped as a set)
+function merge(r){
+  let ch=false;
+  for(const t of r.turns||[])if(!A.seenT.has(t.id)&&okTurn(t)){A.seenT.add(t.id);S.log.push({day:t.day,ts:t.ts,obj:t.obj,lang:t.lang,result:t.result,judge:t.judge,id:t.id});ch=true;}
+  for(const g of r.gifts||[])if(!A.seenG.has(g.id)&&okGift(g)){A.seenG.add(g.id);S.earned.push({id:g.id,animal:g.animal,day:g.day});ch=true;}
+  for(const d of r.dropped||[])if(!A.seenD.has(d.pair_key)&&okPair(d.pair_key)){A.seenD.add(d.pair_key);S.dropped.push(d.pair_key);ch=true;}
+  const s=r.settings;
+  if(s&&s.updated_at&&!A.outbox.some(e=>e.k==='settings')&&(!A.meta.settings_at||tms(s.updated_at)>tms(A.meta.settings_at))){
+    applySettings(s.settings,s.languages);A.lastSettings=JSON.stringify(settingsObj());A.meta.settings_at=s.updated_at;ch=true;}
+  if(ch){S.log.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:a.ts<b.ts?-1:a.ts>b.ts?1:0);S.earned.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:0);
+    A.storageFail=!writeLS(KEY,S);render();}
+  return ch;
+}
+// incremental pull with a 2 min overlap (rows can commit slightly out of order); never applied mid-session
+async function pull(){
+  if(!A.ready||A.pulling||inSession())return;
+  A.pulling=true;const gen=A.gen;
+  try{
+    const since=A.meta.cursor?new Date(tms(A.meta.cursor)-120000).toISOString():null;
+    const r=await BE.data.pull(A.meta.child.id,since);if(gen!==A.gen)return;
+    if(!r||r.error){A.pullFailed=true;A.lastErr=(r&&r.error)||'server';return;}
+    A.pullFailed=false;
+    if(inSession())return;   // a session started meanwhile: the next open pulls again
+    merge(r);
+    if(r.cursor&&(!A.meta.cursor||tms(r.cursor)>tms(A.meta.cursor)))A.meta.cursor=new Date(tms(r.cursor)).toISOString();
+    if(!A.outbox.length){A.lastErr=null;A.meta.last_sync=new Date().toISOString();}
+    writeLS(SYNC_KEY,A.meta);
+  }finally{if(gen===A.gen){A.pulling=false;updateAcctUI();}}
+}
+async function syncAll(){await flush();await pull();}
+window.RR_SYNC={flush,pull,syncAll,status:()=>({outbox:A.outbox.length,lastErr:A.lastErr,meta:A.meta,text:$('syncStatus').textContent})};   // QA hook E-8
+
+// ---------- one-time pilot import (spec R18–R21; the pilot key is only ever read) ----------
+function readPilot(){const p=readJSON(PILOT_KEY);if(!p||typeof p!=='object'||Array.isArray(p))return null;
+  return {log:Array.isArray(p.log)?p.log:[],earned:Array.isArray(p.earned)?p.earned:[],dropped:Array.isArray(p.dropped)?p.dropped:[],settings:p.settings&&typeof p.settings==='object'?p.settings:null};}
+function importAnswered(){try{return localStorage.getItem(IMPORT_KEY)!==null;}catch(e){return true;}}
+function importMsg(t){$('importMsg').textContent=t;$('importMsg').hidden=!t;}
+// runs on every open while the offer is unanswered on this phone (QA D-6)
+function importCheck(){
+  const p=readPilot(),show=!!p&&(p.log.length>0||p.earned.length>0)&&!importAnswered();
+  $('importCard').hidden=!show;importMsg('');
+  if(show){$('importText').textContent=`This phone has progress from the pilot: ${plural(p.log.length,'turn')}, ${plural(p.earned.length,'animal')}. Import it into ${A.meta.child.nickname}?`;
+    $('importYes').disabled=false;$('importNo').disabled=false;}
+}
+async function doImport(){
+  const p=readPilot();if(!p)return importCheck();
+  if(navigator.onLine===false)return importMsg('Import needs a connection.');
+  const gen=A.gen,cid=A.meta.child.id;$('importYes').disabled=true;$('importNo').disabled=true;importMsg('Importing…');
+  const turns=[],gifts=[],dropped=[];
+  // entries that the database would reject are left out (and so not counted), so one odd old row cannot block the rest
+  for(let i=0;i<p.log.length;i++){const e=p.log[i];if(!okTurn(e))continue;
+    turns.push({id:await uuidFromHash(cid+'turn'+JSON.stringify(e)+i),child_id:cid,day:e.day,ts:e.ts,obj:e.obj,lang:e.lang,result:e.result,judge:e.judge});}
+  for(let i=0;i<p.earned.length;i++){const e=p.earned[i];if(!okGift(e))continue;
+    gifts.push({id:await uuidFromHash(cid+'gift'+JSON.stringify(e)+i),child_id:cid,day:e.day,animal:aid(e)});}
+  for(const k of new Set(p.dropped))if(okPair(k))dropped.push({child_id:cid,pair_key:k});
+  const r=await BE.data.push(cid,{turns,gifts,dropped});if(gen!==A.gen)return;
+  if(!r||r.error){$('importYes').disabled=false;$('importNo').disabled=false;return importMsg(r&&r.error==='network'?'Import needs a connection.':'Import failed. Try again.');}
+  merge({turns,gifts,dropped});
+  if(p.settings)applySettings(p.settings,null);
+  save();   // queues the imported settings (turns, gifts and dropped are already on the server)
+  writeLS(IMPORT_KEY,{done:'imported',at:new Date().toISOString()});
+  $('importCard').hidden=true;importMsg(`Imported: ${plural(turns.length,'turn')}, ${plural(gifts.length,'animal')}.`);
+  render();updateAcctUI();
+}
+$('importYes').addEventListener('click',()=>doImport());
+$('importNo').addEventListener('click',()=>{writeLS(IMPORT_KEY,{done:'declined',at:new Date().toISOString()});$('importCard').hidden=true;importMsg('');});
+
+// ---------- sign-out (spec R12, R13, S10): account data and session go, rr-pilot-v1*, rr-import-*, rr-stub-db-* stay ----------
+function clearWorkingCopy(){[KEY,OUTBOX_KEY,SYNC_KEY].forEach(removeLS);}
+function clearSessionKeys(){removeLS('rr-stub-session-'+ENV);const pre='sb-rr-'+ENV+'-auth',ks=[];
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(pre))ks.push(k);}}catch(e){return;}
+  ks.forEach(removeLS);}
+function wipeDom(){['zooGrid','partyShelf','partyArt','partyEggs','partyText','confetti','animalsMeta','zooMeta','zooSay','tbl','dinner','planList','planMeta','bedtime','bankNote','eggs','whoami','backendLabel','syncStatus','turnCount','importText','testOut'].forEach(id=>{$(id).textContent='';});
+  importMsg('');['zoo','party','bye'].forEach(id=>$(id).classList.remove('on'));}
+async function doSignOut(){
+  A.ready=false;A.gen++;A.flushing=false;A.pulling=false;clearTimeout(A.saveT);clearInterval(A.tick);
+  await BE.auth.signOut();
+  clearWorkingCopy();clearSessionKeys();
+  A.user=null;A.meta=null;A.outbox=[];A.seenT=new Set();A.seenG=new Set();A.seenD=new Set();A.lastErr=null;A.pullFailed=false;A.storageFail=false;
+  resetS();wipeDom();$('acctCard').hidden=true;$('importCard').hidden=true;$('inEmail').value='';$('inNick').value='';
+  showSignin('');
+}
+function authLost(){doSignOut().then(()=>{$('signinErr').textContent=MSG.auth;});}
+$('signOutBtn').addEventListener('click',()=>{
+  const n=A.outbox.length;
+  // the only dialog in account mode, and only in the parent view (QA E-9)
+  if(n&&!confirm(`${n===1?'1 change is':n+' changes are'} not synced yet and will be lost on this phone. Sign out anyway?`))return;
+  doSignOut();
+});
+
+// ---------- flush / pull triggers ----------
+window.addEventListener('online',()=>{if(A.ready)syncAll();else if(A.retry&&!$('scrWait').hidden)A.retry();});
+window.addEventListener('offline',updateAcctUI);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&A.ready)syncAll();});
+// a sign-in link opened in this tab when only the hash differs (no reload happens)
+window.addEventListener('hashchange',()=>{if(!BE||!/(stub_token|access_token|error_code)=/.test(location.hash))return;
+  if(A.ready){cleanUrl();return;}if(BE.kind==='stub')acctBoot();else location.reload();});
+
+// ---------- start ----------
+if(ACCT)acctBoot();else if(BACKEND==='none')showBackendError();else render();
 })();
 </script>
