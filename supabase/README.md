@@ -13,8 +13,10 @@ Only two values leave the dashboard: **Project URL** and the **anon (public) key
 1. Dashboard → **SQL Editor** → New query.
 2. Paste the whole of `migrations/001_i1_accounts.sql` → **Run**. It should end with `COMMIT` and no error. Running it twice is safe.
 3. Check: **Table Editor** shows `profiles, children, turns, gifts, dropped`, each marked "RLS enabled"; **Authentication → Policies** lists 2–3 policies per table.
+4. New query → paste the whole of `migrations/002_i2a_words.sql` (I2a custom words) → **Run**. Always **after** 001; running it twice is safe.
+5. Check: **Table Editor** also shows `custom_words` marked "RLS enabled"; **Authentication → Policies** lists 3 policies for it (select, insert, update; no delete).
 
-Run it on `rr-nonprod` now; on `rr-prod` only at the I4 go-live.
+Migrations run in number order (001, 002, …), each exactly as committed. Run them on `rr-nonprod` now; on `rr-prod` only at the I4 go-live.
 
 ## Dashboard settings (per project)
 Menu labels are from the Supabase dashboard as of 2026 (my knowledge; names can move slightly).

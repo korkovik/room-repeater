@@ -125,6 +125,18 @@ button.linkbtn{background:none;box-shadow:none;color:var(--accent);text-decorati
 .stubbox a{color:#7B3FE4;font-weight:700}
 fieldset.langs{border:0;margin:0;padding:0}
 fieldset.langs legend{font-weight:700;padding:0}
+/* I2a: choose words (built-in on/off, own words) */
+h3{font-size:15px;font-weight:900;margin:0}
+.wordsed{margin-top:14px;display:flex;flex-direction:column;gap:16px}
+.emogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.emogrid button{padding:6px 0;font-size:24px;line-height:1.2}
+.emogrid button[aria-pressed="true"]{box-shadow:0 0 0 3px var(--accent) inset;background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.wrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.wrow:last-child{border-bottom:0}
+.wrow .we{font-size:24px;line-height:1}
+.wrow .wt{flex:1;min-width:0;overflow-wrap:anywhere}
+.wrow input[type=checkbox]{width:20px;height:20px;margin:0}
+.wrow button{padding:6px 12px}
 </style>
 
 <div class="wrap" id="acct" hidden>
@@ -238,6 +250,38 @@ fieldset.langs legend{font-weight:700;padding:0}
     <h2>Words</h2>
     <div class="tbl"><table id="tbl"></table></div>
     <div class="muted" style="margin-top:8px">new · heard · said · <b>solid</b> = said on 3 different days · dropped = missed 3 days running. <span id="bankNote"></span></div>
+  </div>
+
+  <div class="card" id="wordsCard" data-testid="words-card" hidden>
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h2>Choose words</h2>
+        <div class="muted" id="wordsSummary" data-testid="words-summary"></div>
+      </div>
+      <button type="button" id="wordsEdit" data-testid="words-edit" aria-expanded="false" aria-controls="wordsEditor">Choose words</button>
+    </div>
+    <div id="wordsEditor" class="wordsed" data-testid="words-editor" hidden>
+      <form id="cwForm" class="stack" data-testid="cw-form" novalidate>
+        <h3>Add your own word</h3>
+        <label class="fld"><span><span class="lang en">EN</span> English <span class="muted" id="cwNeedEn"></span></span><input type="text" id="cwEn" data-testid="cw-en" autocomplete="off" spellcheck="false" maxlength="60"></label>
+        <label class="fld"><span><span class="lang de">DE</span> German <span class="muted" id="cwNeedDe"></span></span><input type="text" id="cwDe" data-testid="cw-de" autocomplete="off" spellcheck="false" maxlength="60"></label>
+        <label class="fld"><span><span class="lang es">ES</span> Spanish <span class="muted" id="cwNeedEs"></span></span><input type="text" id="cwEs" data-testid="cw-es" autocomplete="off" spellcheck="false" maxlength="60"></label>
+        <div><div style="font-weight:700;margin-bottom:6px" id="cwPicLabel">Picture</div><div class="emogrid" id="cwGrid" data-testid="cw-emoji-grid" role="group" aria-labelledby="cwPicLabel"></div></div>
+        <div class="err" id="cwErr" data-testid="cw-error" aria-live="polite"></div>
+        <div><button type="submit" class="primary" id="cwSave" data-testid="cw-save">Add word</button></div>
+      </form>
+      <div>
+        <h3>Your words</h3>
+        <div id="cwList" data-testid="cw-list"></div>
+      </div>
+      <div>
+        <h3>Built-in words</h3>
+        <div id="bwList" data-testid="bw-list">
+          <div class="row" style="margin:8px 0"><button type="button" id="bwAllOn" data-testid="bw-all-on">All on</button><button type="button" id="bwAllOff" data-testid="bw-all-off">All off</button></div>
+          <div id="bwRows"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -402,7 +446,7 @@ const ACCT=BACKEND==='stub'||BACKEND==='supabase';
 // signed in, the game works on the account working copy; legacy keeps the pilot key byte-for-byte (R4)
 const KEY=ACCT?'rr-acct-'+ENV:PILOT_KEY;
 // account state; declared here because the first save() runs a few lines below
-const A={ready:false,gen:0,user:null,meta:null,outbox:[],seenT:new Set(),seenG:new Set(),seenD:new Set(),lastSettings:'',lastErr:null,pullFailed:false,storageFail:false,flushing:false,pulling:false,again:false,saveT:0,tick:0,retry:null};
+const A={ready:false,gen:0,user:null,meta:null,outbox:[],seenT:new Set(),seenG:new Set(),seenD:new Set(),seenW:new Map(),lastSettings:'',lastErr:null,pullFailed:false,storageFail:false,flushing:false,pulling:false,again:false,saveT:0,tick:0,retry:null};
 if(ENV!=='prod'){
   document.title='['+ENV.toUpperCase()+'] '+document.title;
   try{const mr=document.createElement('meta');mr.name='robots';mr.content='noindex,nofollow';document.head.appendChild(mr);}catch(e){}
@@ -425,10 +469,31 @@ const key=(o,l)=>o+'|'+l;
 // Pictures per session. Settings saved before this held minutes instead, so a missing value means the default.
 const pics=()=>{const n=Math.round(+S.settings.pics);return Number.isFinite(n)?Math.min(30,Math.max(6,n)):8;};
 
+// ---------- the word pool (I2a, spec-i2a R11, R12, R15) ----------
+// Word text never goes into HTML unescaped: templates use esc(), everything else textContent.
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const BY_ID=new Map(OBJECTS.map(o=>[o.id,o]));
+// own words exist only in account mode (S.words); legacy never reads or writes them (R23)
+const customWords=()=>ACCT&&Array.isArray(S.words)?S.words:[];
+// a custom word as the game sees it: id 'cw-<uuid>', e = its emoji, a text per language or null
+const cwView=r=>({id:'cw-'+r.id,e:r.emoji,en:r.en,de:r.de,es:r.es,custom:true});
+const firstText=w=>w.en||w.de||w.es||'';
+// any word by game id, switched off and deleted ones included, so old turns still resolve
+function wordById(id){if(typeof id!=='string')return null;
+  if(id.startsWith('cw-')){const u=id.slice(3),r=customWords().find(w=>w.id===u);return r?cwView(r):null;}
+  return BY_ID.get(id)||null;}
+// the pool: own words that are on (oldest first), then the built-ins that are on, in OBJECTS order; legacy = OBJECTS
+function activeWords(){if(!ACCT)return OBJECTS;
+  const off=new Set(Array.isArray(S.settings.off)?S.settings.off:[]);
+  return customWords().filter(w=>w.enabled&&!w.deleted).map(cwView).concat(OBJECTS.filter(o=>!off.has(o.id)));}
+window.RR_WORDS={active:()=>activeWords().map(o=>o.id),byId:id=>{const w=wordById(id);return w?Object.assign({},w):null;}};   // QA hook E-1
+window.OBJECTS=Object.freeze(OBJECTS.map(o=>Object.freeze(Object.assign({},o))));   // read-only copy of the built-in bank for QA (qa-i2a #5, #6)
+
 // ---------- status per pair ----------
 function stats(){
   const m={};
-  for(const o of OBJECTS)for(const l of ['en','de','es'])m[key(o.id,l)]={obj:o,lang:l,heard:0,said:0,saidDays:new Set(),last:null,lastSaid:null,missStreak:0,days:{}};
+  // only the pool counts; an own word takes part only in the languages it has a text for
+  for(const o of activeWords())for(const l of ['en','de','es'])if(o[l])m[key(o.id,l)]={obj:o,lang:l,heard:0,said:0,saidDays:new Set(),last:null,lastSaid:null,missStreak:0,days:{}};
   for(const t of S.log){const p=m[key(t.obj,t.lang)];if(!p)continue;p.heard++;p.last=t.day;
     if(t.result==='said'){p.said++;p.saidDays.add(t.day);p.lastSaid=t.day;}
     p.days[t.day]=p.days[t.day]||{said:false};if(t.result==='said')p.days[t.day].said=true;}
@@ -455,8 +520,8 @@ function buildPlan(){
   stale.forEach(p=>push(p,'stale'));
   // rule 3: max two new objects (each in all active languages). An object stays new while any active language
   // is unheard: a short session can show its English but not its German, and the German must still come up.
-  const unheard=o=>L.filter(l=>m[key(o.id,l)].heard===0&&!m[key(o.id,l)].dropped);
-  const newObjs=OBJECTS.filter(o=>unheard(o).length).slice(0,2);
+  const unheard=o=>L.filter(l=>{const p=m[key(o.id,l)];return p&&p.heard===0&&!p.dropped;});
+  const newObjs=activeWords().filter(o=>unheard(o).length).slice(0,2);
   newObjs.forEach(o=>unheard(o).forEach(l=>push(m[key(o.id,l)],'new')));
   // fill with review of known pairs, freshest last
   Object.values(m).filter(p=>L.includes(p.lang)&&!p.dropped&&p.heard>0&&p.last!==d).sort((a,b)=>(a.last>b.last?1:-1)).forEach(p=>push(p,'review'));
@@ -466,7 +531,8 @@ function dinnerWords(){
   const m=stats(),d=today(),L=langs();
   const todays=S.log.filter(t=>t.day===d);
   const pick=[];const seen=new Set();
-  const add=p=>{const k=key(p.obj.id,p.lang);if(!seen.has(k)&&L.includes(p.lang)&&!p.dropped){seen.add(k);pick.push(p);}};
+  // a turn of a word that is switched off has no pair
+  const add=p=>{if(!p)return;const k=key(p.obj.id,p.lang);if(!seen.has(k)&&L.includes(p.lang)&&!p.dropped){seen.add(k);pick.push(p);}};
   todays.filter(t=>t.result!=='said').forEach(t=>add(m[key(t.obj,t.lang)]));
   todays.filter(t=>t.result==='said').forEach(t=>add(m[key(t.obj,t.lang)]));
   buildPlan().forEach(x=>add(m[key(x.obj,x.lang)]));
@@ -479,31 +545,37 @@ const MOMENT={dog:'when you see a dog on the way home or in a book',cat:'when a 
 const $=id=>document.getElementById(id);
 function render(){
   const m=stats(),plan=buildPlan(),d=today();
-  const doneToday=S.log.filter(t=>t.day===d);
-  $('planMeta').textContent=doneToday.length?`${doneToday.length} turns today · ${doneToday.filter(t=>t.result==='said').length} said back`:`${plan.length} words planned · ${pics()} pictures`;
-  $('planList').innerHTML=plan.slice(0,12).map(x=>{const o=OBJECTS.find(o=>o.id===x.obj);return `<span>${o.e} <span class="lang ${x.lang}">${x.lang.toUpperCase()}</span> ${o[x.lang]}${x.why==='miss'?' ↩':x.why==='new'?' ✦':''}</span>`;}).join('')+(plan.length>12?`<span class="muted">+${plan.length-12}</span>`:'');
+  const doneToday=S.log.filter(t=>t.day===d),pool=activeWords();
+  // everything switched off (R17): no alert, Start disabled, the reason in planMeta
+  const pm=$('planMeta');
+  if(!pool.length){pm.textContent='No words switched on. Open Choose words to switch some on.';pm.dataset.testid='plan-empty';}
+  else{pm.textContent=doneToday.length?`${doneToday.length} turns today · ${doneToday.filter(t=>t.result==='said').length} said back`:`${plan.length} words planned · ${pics()} pictures`;delete pm.dataset.testid;}
+  $('startBtn').disabled=!pool.length;
+  $('planList').innerHTML=plan.slice(0,12).map(x=>{const o=wordById(x.obj);return `<span>${esc(o.e)} <span class="lang ${x.lang}">${x.lang.toUpperCase()}</span> ${esc(o[x.lang])}${x.why==='miss'?' ↩':x.why==='new'?' ✦':''}</span>`;}).join('')+(plan.length>12?`<span class="muted">+${plan.length-12}</span>`:'');
   const dw=dinnerWords();
-  $('dinner').innerHTML=dw.length?dw.map(p=>`<li><button class="play" data-w="${p.obj[p.lang]}" data-l="${p.lang}" aria-label="Play">▶</button> <b>${p.obj[p.lang]}</b> <span class="lang ${p.lang}">${p.lang.toUpperCase()}</span> — say it ${MOMENT[p.obj.id]||('when the '+p.obj.en+' is in front of her')}, then wait three seconds. If nothing comes, say it once more and carry on.</li>`).join(''):'<li class="muted">Run a session first.</li>';
+  // an own word has no MOMENT: its line names it in the line's own language (R14)
+  $('dinner').innerHTML=dw.length?dw.map(p=>`<li><button class="play" data-w="${esc(p.obj[p.lang])}" data-l="${p.lang}" aria-label="Play">▶</button> <b>${esc(p.obj[p.lang])}</b> <span class="lang ${p.lang}">${p.lang.toUpperCase()}</span> — say it ${p.obj.custom?'when the '+esc(p.obj[p.lang])+' is in front of her':MOMENT[p.obj.id]||('when the '+esc(p.obj.en)+' is in front of her')}, then wait three seconds. If nothing comes, say it once more and carry on.</li>`).join(''):pool.length?'<li class="muted">Run a session first.</li>':'<li class="muted">No words switched on.</li>';
   $('dinner').querySelectorAll('.play').forEach(b=>b.onclick=()=>speak(b.dataset.w,b.dataset.l));
   const has=Object.values(m).filter(p=>p.status==='said'||p.status==='solid'),not=Object.values(m).filter(p=>langs().includes(p.lang)&&p.status==='heard');
   $('bedtime').textContent=(has.length||not.length)?`She has ${has.slice(-3).map(p=>p.obj[p.lang]).join(', ')||'nothing yet'}${not.length?` but not ${not.slice(-2).map(p=>p.obj[p.lang]).join(', ')}`:''}.`:'';
   let h='<tr><th>Object</th>'+['en','de','es'].map(l=>`<th><span class="lang ${l}">${l.toUpperCase()}</span></th>`).join('')+'</tr>';
   // the bank is long: show the words she has met plus the next 3
   const met=new Set(S.log.map(t=>t.obj));let ahead=0;
-  for(const o of OBJECTS){if(!met.has(o.id)&&ahead++>=3)continue;h+=`<tr><td>${o.e} ${o.cz}</td>`+['en','de','es'].map(l=>{const p=m[key(o.id,l)];return `<td><span class="st ${p.status}" title="${o[l]}">${p.status==='new'?'·':p.status==='dropped'?'✕':p.saidDays.size||'○'}</span></td>`;}).join('')+'</tr>';}
+  for(const o of pool){if(!met.has(o.id)&&ahead++>=3)continue;h+=`<tr><td>${esc(o.e)} ${esc(o.custom?firstText(o):o.cz)}</td>`+['en','de','es'].map(l=>{const p=m[key(o.id,l)];if(!p)return '<td></td>';return `<td><span class="st ${p.status}" title="${esc(o[l])}">${p.status==='new'?'·':p.status==='dropped'?'✕':p.saidDays.size||'○'}</span></td>`;}).join('')+'</tr>';}
   $('tbl').innerHTML=h;
-  $('bankNote').textContent=`${OBJECTS.length} words in the bank; shown are the ones she has met and the next 3.`;
+  $('bankNote').textContent=ACCT?`${pool.length} words switched on; shown are the ones she has met and the next 3.`:`${OBJECTS.length} words in the bank; shown are the ones she has met and the next 3.`;
   renderAnimals();
   $('optEn').checked=S.settings.en;$('optDe').checked=S.settings.de;$('optEs').checked=S.settings.es;$('optPics').value=pics();$('optParent').checked=S.settings.parent;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   $('asrNote').textContent=SR?(S.settings.parent?'Parent-confirm mode: you tap 👏 or 🤫 after each word.':asrBlocked?'Speech recognition stopped working this time (microphone blocked, missing or offline), so you tap 👏 or 🤫 after each word. Check Test microphone in Settings, then reload.':'This browser supports speech recognition — that is not a microphone check, so press Test microphone in Settings first. In a session the app judges what she says on its own.'):'No speech recognition in this browser — parent-confirm mode is used.';
+  if(ACCT&&A.ready)renderWords();
 }
 ['optEn','optDe','optEs','optParent'].forEach(id=>$(id).addEventListener('change',()=>{S.settings.en=$('optEn').checked;S.settings.de=$('optDe').checked;S.settings.es=$('optEs').checked;S.settings.parent=$('optParent').checked;if(!langs().length){S.settings.en=true;}save();render();}));
 $('optPics').addEventListener('change',()=>{S.settings.pics=Math.min(30,Math.max(6,Math.round(+$('optPics').value)||8));save();render();});
 $('testBtn').onclick=async()=>{const out=$('testOut');const vs=(window.speechSynthesis?speechSynthesis.getVoices():[]);out.textContent='Voices: '+vs.length+' ('+['en','de','es'].map(l=>l+':'+vs.filter(v=>v.lang.toLowerCase().replace('_','-').startsWith(l)).length).join(', ')+'). Speaking…';lastSpeech='';await speak('dog',"en");const a=lastSpeech+' ('+lastSrc+')';await speak('Hund',"de");const d=lastSpeech+' ('+lastSrc+')';await speak('perro',"es");const s=lastSpeech+' ('+lastSrc+')';const played=m=>m.replace(/^ok\b/,'played');out.textContent+=' EN: '+played(a)+' · DE: '+played(d)+' · ES: '+played(s)+'. This checks the speaker only — use Test microphone for the mic.';};
 $('micBtn').onclick=async()=>{const out=$('testOut'),btn=$('micBtn');btn.disabled=true;out.textContent='Listening — say "dog" now…';const alts=await listen('en');btn.disabled=false;if(alts&&alts.length){const heard=(alts[0]||'').trim()||'something';out.textContent=matches(alts,'dog')?'✓ The microphone works — it heard "'+heard+'".':'✓ The microphone works — it heard "'+heard+'", not "dog". Try again, clearly and close to the phone.';return;}const blocked='the microphone is blocked for this site. Allow it in Chrome (tap the icon left of the address), then reload.';const why={'not-allowed':blocked,'service-not-allowed':blocked,'audio-capture':'no working microphone was found, or another app is using it.','network':'speech recognition needs internet — check the connection.','unsupported':'this browser has no speech recognition, so sessions use parent-confirm (👏/🤫).','start-failed':'speech recognition could not start. Reload and try again.'}[lastRecError];out.textContent='✕ Microphone test failed: '+(why||'nothing was heard. Check the microphone isn’t muted or covered, then try again.');};
 $('resetBtn').onclick=()=>{if(confirm('Delete the whole log?')){S.log=[];S.dropped=[];save();render();}};
-$('exportBtn').onclick=async()=>{const csv='day,time,object,lang,word,result,judge\n'+S.log.map(t=>[t.day,t.ts,t.obj,t.lang,OBJECTS.find(o=>o.id===t.obj)[t.lang],t.result,t.judge].join(',')).join('\n');$('csv').value=csv;try{await navigator.clipboard.writeText(csv);$('exportBtn').textContent='Copied';}catch(e){$('csv').hidden=false;}setTimeout(()=>$('exportBtn').textContent='Copy log as CSV',1500);};
+$('exportBtn').onclick=async()=>{const csv='day,time,object,lang,word,result,judge\n'+S.log.map(t=>{const w=wordById(t.obj);return [t.day,t.ts,t.obj,t.lang,(w&&w[t.lang])||'',t.result,t.judge].join(',');}).join('\n');$('csv').value=csv;try{await navigator.clipboard.writeText(csv);$('exportBtn').textContent='Copied';}catch(e){$('csv').hidden=false;}setTimeout(()=>$('exportBtn').textContent='Copy log as CSV',1500);};
 
 // ---------- child mode ----------
 let queue=[],turnNo=0,current=null,timer=null,endAt=0,busy=false,rec=null,cap=8,sid=0,done=0,revealed=false,revealing=false,revealReady=0;
@@ -546,7 +618,7 @@ async function runTurn(){
   if(busy||!current)return;busy=true;
   // a turn left behind by an ended session stops at its next step: it logs nothing and speaks nothing
   const my=sid,gone=()=>my!==sid;
-  const o=OBJECTS.find(x=>x.id===current.obj),l=current.lang,word=o[l];
+  const o=wordById(current.obj),l=current.lang,word=o[l];
   wrap.className='speaking';cue('Listen…');await speak(word,l);if(gone())return;
   let said=null,judge='asr';
   if(!S.settings.parent&&!asrBlocked){wrap.className='listening';cue('Say it now — listening…');const alts=await listen(l);if(gone())return;if(alts===null){judge='parent';asrBlocked=true;}else{said=matches(alts,word);}}
@@ -564,11 +636,12 @@ function next(){
   if(turnNo>=cap||(!queue.length&&done>0)){return endSession(true);}
   if(Date.now()>endAt||!queue.length){return endSession();}
   current=queue.shift();turnNo++;
-  const o=OBJECTS.find(x=>x.id===current.obj);card.textContent=o.e;
+  const o=wordById(current.obj);card.textContent=o.e;
   $('cueLang').className='lang '+current.lang;$('cueLang').textContent=current.lang.toUpperCase();$('cueName').textContent=LANGNAME[current.lang];$('cueWord').textContent=o[current.lang];cue('Tap the picture');
   wrap.style.setProperty('--accent',`var(--${current.lang})`);
 }
 function startSession(){
+  if(!activeWords().length)return;   // R17: Start is disabled and planMeta says why
   const plan=buildPlan();if(!plan.length){alert('Nothing to practise — enable a language.');return;}
   queue=[];const L=langs();
   // interleave languages
@@ -701,6 +774,29 @@ function okTurn(t){return !!t&&typeof t==='object'&&RX.day.test(t.day)&&RX.ts.te
 function okGift(g){const a=aid(g);return !!g&&typeof g==='object'&&RX.day.test(g.day)&&typeof a==='string'&&cps(a)>=1&&cps(a)<=32;}
 function okPair(p){return typeof p==='string'&&p.length>=3&&p.length<=80&&RX.pair.test(p);}
 function okSettings(s){return !!s&&typeof s==='object'&&!Array.isArray(s)&&JSON.stringify(s).length<=4096;}
+// ---------- own words (I2a, spec-i2a R8–R10; migration 002 enforces a subset) ----------
+// the pictures a parent can pick: objects only, no faces, people, hands, flags or symbols (R9)
+const CUSTOM_EMOJI=['🧸','🎈','🧩','🎨','🖍️','🥁','🎸','🏀','🛴','🚜','🚒','🚑','✈️','🚀','🚁','🛒','🍐','🍊','🍇','🍉','🍒','🥝','🥒','🍅','🥔','🌽','🍕','🍝','🥣','🍯','🥐','🧁','🛁','🧼','🔑','💡','🧺','☂️','🧤','🧣','👕','👖','🐭','🦊','🐼','🦁','🐞','🌈'];
+const WORD_LIMIT=30,WORD_MAX=30;
+// R8: trim, collapse inner whitespace; Latin letters (with accents), space, - ' ’ only; at least one letter
+const normWord=v=>String(v==null?'':v).normalize('NFC').trim().replace(/\s+/g,' ');
+const wordChars=t=>/^[\p{Script=Latin}\p{M} '’-]+$/u.test(t)&&/\p{Script=Latin}/u.test(t);
+const okWordText=t=>typeof t==='string'&&t===normWord(t)&&wordChars(t)&&cps(t)<=WORD_MAX;
+// the database's rule (002 rr_word_text_ok): trimmed, 1–30 code points, no control characters, none of < > & " |
+const okWordTextDb=t=>typeof t==='string'&&t===t.trim()&&cps(t)>=1&&cps(t)<=WORD_MAX&&!/[\u0000-\u001F\u007F-\u009F<>&"|]/.test(t);
+// emoji as stored: 1–16 code points, no ASCII at all (002 check)
+const okEmoji=e=>typeof e==='string'&&cps(e)>=1&&cps(e)<=16&&!/[\u0000-\u007F]/.test(e);
+const okStamp=s=>typeof s==='string'&&Number.isFinite(tms(s));
+// a row the phone keeps and shows (R15): anything failing it is dropped silently
+function okWord(r){return !!r&&typeof r==='object'&&typeof r.id==='string'&&UUID_RE.test(r.id)&&okEmoji(r.emoji)
+  &&LANGS.every(l=>r[l]==null||okWordText(r[l]))&&LANGS.some(l=>r[l]!=null)&&typeof r.enabled==='boolean'&&typeof r.deleted==='boolean'&&okStamp(r.changed_at);}
+const pickWord=r=>({id:r.id,emoji:r.emoji,en:r.en==null?null:r.en,de:r.de==null?null:r.de,es:r.es==null?null:r.es,enabled:r.enabled,deleted:r.deleted,changed_at:r.changed_at});
+// adapter-side check of a saveWords batch (architecture-i2a §2): strict = stub (full R8 + the emoji list), else the database subset
+function okWordBatch(rows,strict){return Array.isArray(rows)&&rows.length>=1&&rows.length<=100&&rows.every(r=>!!r&&typeof r==='object'&&typeof r.id==='string'&&UUID_RE.test(r.id)
+  &&(strict?CUSTOM_EMOJI.includes(r.emoji):okEmoji(r.emoji))&&LANGS.every(l=>r[l]==null||(strict?okWordText(r[l]):okWordTextDb(r[l])))&&LANGS.some(l=>r[l]!=null)
+  &&typeof r.enabled==='boolean'&&typeof r.deleted==='boolean'&&okStamp(r.changed_at));}
+// built-in ids that are switched off: known ids only, unique, sorted (R18)
+const cleanOff=ids=>[...new Set((Array.isArray(ids)?ids:[]).filter(i=>typeof i==='string'&&BY_ID.has(i)))].sort();
 // timestamps from Postgres carry microseconds; Date.parse wants at most milliseconds
 const tms=s=>Date.parse(String(s).replace(/(\.\d{3})\d+/,'$1'));
 const hhmm=s=>new Date(tms(s)).toTimeString().slice(0,5);
@@ -714,11 +810,13 @@ function removeLS(k){try{localStorage.removeItem(k);return true;}catch(e){return
 function makeStub(){
   const DBK='rr-stub-db-'+ENV,SK='rr-stub-session-'+ENV,CODE='123456';
   const INVITED=['parent1@example.test','parent2@example.test','tom@example.test'];
-  const empty=()=>({users:[],profiles:{},children:{},turns:[],gifts:[],dropped:[],tokens:{},seq:0,last:0});
+  const empty=()=>({users:[],profiles:{},children:{},turns:[],gifts:[],dropped:[],words:[],tokens:{},seq:0,last:0});
   // read on every call, never cached, so a copy of this key seeds a "second phone" (E-5); a corrupt key counts as empty
   function db(){const d=readJSON(DBK);
     if(!d||typeof d!=='object'||!Array.isArray(d.users)||!Array.isArray(d.turns)||!Array.isArray(d.gifts)||!Array.isArray(d.dropped)||!d.profiles||typeof d.profiles!=='object'||!d.children||typeof d.children!=='object')return empty();
-    if(!d.tokens||typeof d.tokens!=='object')d.tokens={};return d;}
+    if(!d.tokens||typeof d.tokens!=='object')d.tokens={};
+    if(!Array.isArray(d.words))d.words=[];   // an I1-era DB has no words: keep its users, turns and gifts (R20)
+    return d;}
   function put(d){localStorage.setItem(DBK,JSON.stringify(d));}
   const later=()=>new Promise(r=>setTimeout(r,150));
   const offline=()=>navigator.onLine===false;
@@ -782,12 +880,28 @@ function makeStub(){
         for(const r of G)if(!gi.has(r.id)){gi.add(r.id);d.gifts.push({id:r.id,child_id:cid,day:r.day,animal:r.animal,created_at:stamp(d)});}
         for(const r of D)if(!di.has(r.pair_key)){di.add(r.pair_key);d.dropped.push({child_id:cid,pair_key:r.pair_key,created_at:stamp(d)});}
         put(d);return {ok:true};}),
+      // upsert by id with the trigger rules of migration 002: last write wins by changed_at (clamped to now + 5 min),
+      // delete always wins and is final, at most 30 live words per child; all or nothing per call
+      saveWords:safe(async(cid,rows)=>{if(!okWordBatch(rows,true))return {error:'invalid'};
+        const g=await gate('saveWords');if(g.err)return {error:g.err};const d=db();if(!own(d,g.uid,cid))return {error:'forbidden'};
+        if(rows.some(r=>r.child_id!==undefined&&r.child_id!==cid))return {error:'forbidden'};
+        for(const r of rows){const t=new Date(Math.min(tms(r.changed_at),Date.now()+3e5)).toISOString(),old=d.words.find(w=>w.id===r.id);
+          if(!old){
+            if(!r.deleted&&d.words.filter(w=>w.child_id===cid&&!w.deleted).length>=WORD_LIMIT)return {error:'limit'};
+            const now=stamp(d);d.words.push(Object.assign(pickWord(r),{child_id:cid,changed_at:t,created_at:now,updated_at:now}));continue;}
+          if(old.child_id!==cid)return {error:'forbidden'};
+          if(old.deleted)continue;                                          // a tombstone ignores every later write
+          if(tms(t)<tms(old.changed_at)){if(!r.deleted)continue;old.deleted=true;}   // older: skipped, except a delete
+          else Object.assign(old,pickWord(r),{changed_at:t});
+          old.updated_at=stamp(d);}
+        put(d);return {ok:true};}),
       pull:safe(async(cid,cursor)=>{const g=await gate('pull');if(g.err)return {error:g.err};const d=db(),c=own(d,g.uid,cid);if(!c)return {error:'forbidden'};
         const since=cursor?tms(cursor):-Infinity;
-        const pick=a=>a.filter(r=>r.child_id===cid&&tms(r.created_at)>since).sort((x,y)=>tms(x.created_at)-tms(y.created_at)).map(copy);
-        const turns=pick(d.turns),gifts=pick(d.gifts),dropped=pick(d.dropped);let max=cursor||null;
+        const pick=(a,f='created_at')=>a.filter(r=>r.child_id===cid&&tms(r[f])>since).sort((x,y)=>tms(x[f])-tms(y[f])).map(copy);
+        const turns=pick(d.turns),gifts=pick(d.gifts),dropped=pick(d.dropped),words=pick(d.words,'updated_at');let max=cursor||null;
         for(const r of [...turns,...gifts,...dropped])if(!max||tms(r.created_at)>tms(max))max=r.created_at;
-        return {turns,gifts,dropped,settings:{settings:copy(c.settings),languages:c.languages.slice(),updated_at:c.settings_updated_at},cursor:max};})
+        for(const r of words)if(!max||tms(r.updated_at)>tms(max))max=r.updated_at;
+        return {turns,gifts,dropped,words,settings:{settings:copy(c.settings),languages:c.languages.slice(),updated_at:c.settings_updated_at},cursor:max};})
     },
     _stub:hooks
   };
@@ -810,6 +924,9 @@ function makeSupabase(cfg){
     if(offline()||/failed to fetch|networkerror|load failed|network request failed/i.test(m))return 'network';
     if(c==='23505')return 'exists';if(c==='23514'||c==='22P02'||c==='23502'||c==='22001')return 'invalid';if(c==='42501')return 'forbidden';
     if(c==='PGRST301'||c==='PGRST303'||/jwt/i.test(m))return 'auth';return 'server';}
+  // custom_words (architecture-i2a §2): the limit trigger first, then the child FK, then the usual mapping
+  function wordErr(e){const m=(e&&e.message)||'',c=e&&e.code;
+    if(/custom_words_limit/.test(m))return 'limit';if(c==='23503')return 'forbidden';const x=dbErr(e);return x==='exists'?'invalid':x;}
   const U=u=>({id:u.id,email:u.email});
   async function uid(){const {data}=await client.auth.getSession();return data&&data.session?data.session.user.id:null;}
   // every call answers {error:code} instead of throwing (adapter contract)
@@ -851,15 +968,23 @@ function makeSupabase(cfg){
       push:run(async(cid,p)=>{for(const [t,rows,on] of [['turns',(p&&p.turns)||[],'id'],['gifts',(p&&p.gifts)||[],'id'],['dropped',(p&&p.dropped)||[],'child_id,pair_key']])
         for(const part of chunks(rows)){const {error}=await client.from(t).upsert(part,{onConflict:on,ignoreDuplicates:true});if(error)return {error:dbErr(error)};}
         return {ok:true};}),
-      pull:run(async(cid,cursor)=>{const res={turns:[],gifts:[],dropped:[]};
-        for(const [t,cols,tie] of [['turns','id,day,ts,obj,lang,result,judge,created_at','id'],['gifts','id,day,animal,created_at','id'],['dropped','pair_key,created_at','pair_key']])
-          for(let from=0;;from+=1000){let q=client.from(t).select(cols).eq('child_id',cid);if(cursor)q=q.gt('created_at',cursor);
-            const {data,error}=await q.order('created_at').order(tie).range(from,from+999);if(error)return {error:dbErr(error)};
+      // upsert by id (no ignoreDuplicates: updates must apply; no created_at/updated_at: server-stamped, not granted).
+      // Every row carries the same nine keys, texts null when missing, so PostgREST gets uniform columns.
+      saveWords:run(async(cid,rows)=>{if(!okWordBatch(rows,false))return {error:'invalid'};
+        const pay=rows.map(r=>({id:r.id,child_id:cid,emoji:r.emoji,en:r.en==null?null:r.en,de:r.de==null?null:r.de,es:r.es==null?null:r.es,enabled:r.enabled,deleted:r.deleted,changed_at:r.changed_at}));
+        const {error}=await client.from('custom_words').upsert(pay,{onConflict:'id'});return error?{error:wordErr(error)}:{ok:true};}),
+      // turns, gifts and dropped page by created_at; custom_words by updated_at (a toggle or delete changes an old row)
+      pull:run(async(cid,cursor)=>{const res={turns:[],gifts:[],dropped:[],custom_words:[]};
+        for(const [t,cols,tie,at] of [['turns','id,day,ts,obj,lang,result,judge,created_at','id','created_at'],['gifts','id,day,animal,created_at','id','created_at'],['dropped','pair_key,created_at','pair_key','created_at'],
+          ['custom_words','id,emoji,en,de,es,enabled,deleted,changed_at,created_at,updated_at','id','updated_at']])
+          for(let from=0;;from+=1000){let q=client.from(t).select(cols).eq('child_id',cid);if(cursor)q=q.gt(at,cursor);
+            const {data,error}=await q.order(at).order(tie).range(from,from+999);if(error)return {error:dbErr(error)};
             res[t].push(...data);if(data.length<1000)break;}
         const {data:c,error}=await client.from('children').select('settings,languages,settings_updated_at').eq('id',cid).maybeSingle();
         if(error)return {error:dbErr(error)};if(!c)return {error:'forbidden'};
         let max=cursor||null;for(const r of [...res.turns,...res.gifts,...res.dropped])if(!max||tms(r.created_at)>tms(max))max=r.created_at;
-        return {turns:res.turns,gifts:res.gifts,dropped:res.dropped,settings:{settings:c.settings,languages:c.languages,updated_at:c.settings_updated_at},cursor:max};})
+        for(const r of res.custom_words)if(!max||tms(r.updated_at)>tms(max))max=r.updated_at;
+        return {turns:res.turns,gifts:res.gifts,dropped:res.dropped,words:res.custom_words,settings:{settings:c.settings,languages:c.languages,updated_at:c.settings_updated_at},cursor:max};})
     }
   };
 }
@@ -951,25 +1076,29 @@ async function onboard(){
 function finishOnboarding(c){
   enterApp({user_id:A.user.id,email:A.user.email,terms:true,child:{id:c.id,nickname:c.nickname},cursor:null,last_sync:null,settings_at:c.settings_updated_at||c.updated_at||null},c);
 }
-function resetS(){S.log=[];S.dropped=[];S.earned=[];S.settings={en:true,de:true,es:true,pics:8,parent:false};S.v=2;}
-const settingsObj=()=>({en:!!S.settings.en,de:!!S.settings.de,es:!!S.settings.es,pics:pics(),parent:!!S.settings.parent});
+function resetS(){S.log=[];S.dropped=[];S.earned=[];S.words=[];S.settings={en:true,de:true,es:true,pics:8,parent:false};S.v=2;}
+// off (built-in words switched off) travels inside settings: no schema change, same last-write-wins (R18)
+const settingsObj=()=>({en:!!S.settings.en,de:!!S.settings.de,es:!!S.settings.es,pics:pics(),parent:!!S.settings.parent,off:cleanOff(S.settings.off)});
 // server (or pilot) settings into S.settings; languages win over the en/de/es flags when given (spec R17, A4)
 function applySettings(s,L){const o=Object.assign({},s&&typeof s==='object'?s:{});
   if(Array.isArray(L)&&L.length)for(const l of LANGS)o[l]=L.includes(l);
   for(const k of ['en','de','es','parent'])if(o[k]!==undefined)S.settings[k]=!!o[k];
   if(o.pics!==undefined)S.settings.pics=Math.min(30,Math.max(6,Math.round(+o.pics)||8));
+  if(Array.isArray(o.off))S.settings.off=cleanOff(o.off);   // only when given: settings without off leave it alone (R18, R22)
   if(!langs().length)S.settings.en=true;}
 function enterApp(meta,c){
   A.meta=meta;resetS();
   const w=readJSON(KEY);
-  if(w&&typeof w==='object'&&!Array.isArray(w)){for(const k of ['log','dropped','earned'])if(Array.isArray(w[k]))S[k]=w[k];if(w.settings&&typeof w.settings==='object')Object.assign(S.settings,w.settings);}
+  if(w&&typeof w==='object'&&!Array.isArray(w)){for(const k of ['log','dropped','earned'])if(Array.isArray(w[k]))S[k]=w[k];if(w.settings&&typeof w.settings==='object')Object.assign(S.settings,w.settings);
+    if(S.settings.off!==undefined)S.settings.off=cleanOff(S.settings.off);
+    if(Array.isArray(w.words))S.words=w.words.filter(okWord).map(pickWord);}   // rows failing R8/R9 are dropped (R15)
   else if(c)applySettings(c.settings,c.languages);
   else meta.settings_at=null;   // working copy lost: take the server's settings on the next pull
   const ob=readJSON(OUTBOX_KEY);A.outbox=Array.isArray(ob)?ob:[];
-  A.seenT=new Set(S.log.map(t=>t.id).filter(Boolean));A.seenG=new Set(S.earned.filter(g=>g.animal).map(g=>g.id));A.seenD=new Set(S.dropped);
+  A.seenT=new Set(S.log.map(t=>t.id).filter(Boolean));A.seenG=new Set(S.earned.filter(g=>g.animal).map(g=>g.id));A.seenD=new Set(S.dropped);A.seenW=new Map(S.words.map(w=>[w.id,wordKey(w)]));
   A.lastSettings=JSON.stringify(settingsObj());A.lastErr=null;A.pullFailed=false;A.storageFail=false;A.flushing=false;A.pulling=false;
   A.ready=true;writeLS(SYNC_KEY,meta);save();
-  $('acct').hidden=true;$('parent').hidden=false;$('acctCard').hidden=false;$('resetBtn').hidden=true;   // reset hidden when signed in (R27)
+  $('acct').hidden=true;$('parent').hidden=false;$('acctCard').hidden=false;$('wordsCard').hidden=false;$('resetBtn').hidden=true;   // reset hidden when signed in (R27)
   $('whoami').textContent=`Signed in as ${meta.email} · ${meta.child.nickname}`;
   $('backendLabel').textContent='Backend: '+BE.label;
   render();updateAcctUI();importCheck();
@@ -984,6 +1113,9 @@ function acctSave(){
   for(const t of S.log){if(!t.id)t.id=uuid();if(!A.seenT.has(t.id)){A.seenT.add(t.id);A.outbox.push({k:'turn',row:{id:t.id,child_id:cid,day:t.day,ts:t.ts,obj:t.obj,lang:t.lang,result:t.result,judge:t.judge}});added++;}}
   for(const g of S.earned){if(!g.animal){g.animal=g.id;g.id=uuid();}if(!A.seenG.has(g.id)){A.seenG.add(g.id);A.outbox.push({k:'gift',row:{id:g.id,child_id:cid,day:g.day,animal:g.animal}});added++;}}
   for(const p of S.dropped)if(!A.seenD.has(p)){A.seenD.add(p);if(okPair(p)){A.outbox.push({k:'drop',row:{child_id:cid,pair_key:p}});added++;}}
+  // an added, toggled or deleted own word: one entry per word, a newer change replaces the queued one (R19)
+  for(const w of S.words){const k=wordKey(w);if(A.seenW.get(w.id)!==k){A.seenW.set(w.id,k);A.outbox=A.outbox.filter(e=>!(e.k==='word'&&e.row.id===w.id));
+    A.outbox.push({k:'word',row:Object.assign(pickWord(w),{child_id:cid})});added++;}}
   const sk=JSON.stringify(settingsObj());
   if(sk!==A.lastSettings){A.lastSettings=sk;const at=new Date().toISOString();A.outbox=A.outbox.filter(e=>e.k!=='settings');A.outbox.push({k:'settings',settings:JSON.parse(sk),at});A.meta.settings_at=at;added++;}
   // outbox first: a crash between the two writes re-sends (harmless) instead of losing a row
@@ -1010,11 +1142,18 @@ async function flush(){
   A.flushing=true;const gen=A.gen;
   try{
     do{A.again=false;
-      const box=A.outbox.filter(e=>e.k!=='settings');
+      const box=A.outbox.filter(e=>e.k==='turn'||e.k==='gift'||e.k==='drop');
       if(box.length){const pay={turns:[],gifts:[],dropped:[]};for(const e of box)(e.k==='turn'?pay.turns:e.k==='gift'?pay.gifts:pay.dropped).push(e.row);
         const r=await BE.data.push(A.meta.child.id,pay);if(gen!==A.gen)return;
         if(!r||r.error){A.lastErr=(r&&r.error)||'server';break;}
         const sent=new Set(box);A.outbox=A.outbox.filter(e=>!sent.has(e));writeLS(OUTBOX_KEY,A.outbox);}
+      // own words after push, before settings; deletes first, so a queued delete frees its place before a queued add (limit 30)
+      const wb=A.outbox.filter(e=>e.k==='word'),wq=wb.filter(e=>e.row.deleted).concat(wb.filter(e=>!e.row.deleted));let wfail=false;
+      for(let i=0;i<wq.length;i+=100){const part=wq.slice(i,i+100);
+        const r=await BE.data.saveWords(A.meta.child.id,part.map(e=>e.row));if(gen!==A.gen)return;
+        if(!r||r.error){A.lastErr=(r&&r.error)||'server';wfail=true;break;}
+        const sent=new Set(part);A.outbox=A.outbox.filter(e=>!sent.has(e));writeLS(OUTBOX_KEY,A.outbox);}
+      if(wfail)break;
       const s=A.outbox.find(e=>e.k==='settings');
       if(s){const r=await BE.data.saveSettings(A.meta.child.id,s.settings,s.at);if(gen!==A.gen)return;
         if(!r||r.error){A.lastErr=(r&&r.error)||'server';break;}
@@ -1030,6 +1169,7 @@ function merge(r){
   for(const t of r.turns||[])if(!A.seenT.has(t.id)&&okTurn(t)){A.seenT.add(t.id);S.log.push({day:t.day,ts:t.ts,obj:t.obj,lang:t.lang,result:t.result,judge:t.judge,id:t.id});ch=true;}
   for(const g of r.gifts||[])if(!A.seenG.has(g.id)&&okGift(g)){A.seenG.add(g.id);S.earned.push({id:g.id,animal:g.animal,day:g.day});ch=true;}
   for(const d of r.dropped||[])if(!A.seenD.has(d.pair_key)&&okPair(d.pair_key)){A.seenD.add(d.pair_key);S.dropped.push(d.pair_key);ch=true;}
+  if(mergeWords(r.words))ch=true;
   const s=r.settings;
   if(s&&s.updated_at&&!A.outbox.some(e=>e.k==='settings')&&(!A.meta.settings_at||tms(s.updated_at)>tms(A.meta.settings_at))){
     applySettings(s.settings,s.languages);A.lastSettings=JSON.stringify(settingsObj());A.meta.settings_at=s.updated_at;ch=true;}
@@ -1082,7 +1222,7 @@ async function doImport(){
   const r=await BE.data.push(cid,{turns,gifts,dropped});if(gen!==A.gen)return;
   if(!r||r.error){$('importYes').disabled=false;$('importNo').disabled=false;return importMsg(r&&r.error==='network'?'Import needs a connection.':'Import failed. Try again.');}
   merge({turns,gifts,dropped});
-  if(p.settings)applySettings(p.settings,null);
+  if(p.settings)applySettings(Object.assign({},p.settings,{off:null}),null);   // the import never touches off or own words (R22)
   save();   // queues the imported settings (turns, gifts and dropped are already on the server)
   writeLS(IMPORT_KEY,{done:'imported',at:new Date().toISOString()});
   $('importCard').hidden=true;importMsg(`Imported: ${plural(turns.length,'turn')}, ${plural(gifts.length,'animal')}.`);
@@ -1102,8 +1242,8 @@ async function doSignOut(){
   A.ready=false;A.gen++;A.flushing=false;A.pulling=false;clearTimeout(A.saveT);clearInterval(A.tick);
   await BE.auth.signOut();
   clearWorkingCopy();clearSessionKeys();
-  A.user=null;A.meta=null;A.outbox=[];A.seenT=new Set();A.seenG=new Set();A.seenD=new Set();A.lastErr=null;A.pullFailed=false;A.storageFail=false;
-  resetS();wipeDom();$('acctCard').hidden=true;$('importCard').hidden=true;$('inEmail').value='';$('inNick').value='';
+  A.user=null;A.meta=null;A.outbox=[];A.seenT=new Set();A.seenG=new Set();A.seenD=new Set();A.seenW=new Map();A.lastErr=null;A.pullFailed=false;A.storageFail=false;
+  resetS();wipeDom();wipeWords();$('acctCard').hidden=true;$('importCard').hidden=true;$('inEmail').value='';$('inNick').value='';
   showSignin('');
 }
 function authLost(){doSignOut().then(()=>{$('signinErr').textContent=MSG.auth;});}
@@ -1113,6 +1253,99 @@ $('signOutBtn').addEventListener('click',()=>{
   if(n&&!confirm(`${n===1?'1 change is':n+' changes are'} not synced yet and will be lost on this phone. Sign out anyway?`))return;
   doSignOut();
 });
+
+// ---------- I2a: choose words — built-ins on/off and own words (spec-i2a R1–R10, R17–R21) ----------
+const WORD_MSG={need:{en:'Add the word in English.',de:'Add the word in German.',es:'Add the word in Spanish.'},
+  chars:"Use letters, spaces, - and ' only.",len:'Use at most 30 characters.',pic:'Pick a picture.',limit:'You can have up to 30 words of your own. Delete one first.'};
+const CW_IN={en:'cwEn',de:'cwDe',es:'cwEs'},CW_NEED={en:'cwNeedEn',de:'cwNeedDe',es:'cwNeedEs'};
+// what the outbox diff compares (everything the server stores for a word)
+const wordKey=w=>JSON.stringify([w.emoji,w.en,w.de,w.es,w.enabled,w.deleted,w.changed_at]);
+// every change gets a newer changed_at than the one it replaces, even if this phone's clock is behind
+const touch=w=>{w.changed_at=new Date(Math.max(Date.now(),(tms(w.changed_at)||0)+1)).toISOString();};
+let cwPick='',cwSig='';
+// server words into S.words (R20): a pending local change wins; a local tombstone stays;
+// a server delete always applies; otherwise the newer (or equal) changed_at wins. Invalid rows are dropped (R15).
+function mergeWords(rows){
+  if(!Array.isArray(rows)||!rows.length)return false;
+  let ch=false;const add=[];
+  for(const w of rows){
+    if(!okWord(w)||A.outbox.some(e=>e.k==='word'&&e.row.id===w.id))continue;
+    const loc=S.words.find(x=>x.id===w.id);
+    if(!loc){if(!add.some(x=>x.id===w.id))add.push(w);continue;}
+    if(loc.deleted)continue;
+    const nx=tms(w.changed_at)>=tms(loc.changed_at)?pickWord(w):w.deleted?Object.assign({},loc,{deleted:true}):null;
+    if(nx&&wordKey(nx)!==wordKey(loc)){Object.assign(loc,nx);A.seenW.set(loc.id,wordKey(loc));ch=true;}
+  }
+  // new words keep their creation order, so the pool order matches the phone that added them
+  add.sort((a,b)=>(tms(a.created_at)||0)-(tms(b.created_at)||0));
+  for(const w of add){const x=pickWord(w);S.words.push(x);A.seenW.set(x.id,wordKey(x));ch=true;}
+  return ch;
+}
+// the parent's word card; runs from render() in account mode
+function renderWords(){
+  const off=new Set(cleanOff(S.settings.off)),live=customWords().filter(w=>!w.deleted);
+  $('wordsSummary').textContent=`${OBJECTS.length-off.size} of ${OBJECTS.length} built-in words on · ${plural(live.length,'own word')}`;
+  for(const l of LANGS)$(CW_NEED[l]).textContent=S.settings[l]?'(needed)':'(optional)';
+  // own words, newest first; rebuilt only when the list itself changed, so a toggle keeps its focus
+  const shown=live.slice().reverse(),sig=JSON.stringify(shown.map(w=>[w.id,w.emoji,w.en,w.de,w.es]));
+  if(sig!==cwSig){cwSig=sig;const box=$('cwList');box.textContent='';
+    if(!shown.length){const p=document.createElement('p');p.className='muted';p.style.margin='6px 0 0';p.textContent='No words of your own yet.';box.appendChild(p);}
+    for(const w of shown){const row=document.createElement('div');row.className='wrow';row.dataset.testid='cw-row';row.dataset.id=w.id;
+      const e=document.createElement('span');e.className='we';e.textContent=w.emoji;
+      const t=document.createElement('span');t.className='wt';t.textContent=LANGS.filter(l=>w[l]).map(l=>l.toUpperCase()+' '+w[l]).join(' · ');
+      const lab=document.createElement('label');lab.className='row';lab.style.gap='6px';
+      const cb=document.createElement('input');cb.type='checkbox';cb.dataset.testid='cw-toggle';cb.setAttribute('aria-label','Use "'+firstText(w)+'" in sessions');
+      lab.append(cb,'On');
+      const del=document.createElement('button');del.type='button';del.dataset.testid='cw-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete "'+firstText(w)+'"');
+      row.append(e,t,lab,del);box.appendChild(row);}}
+  for(const cb of $('cwList').querySelectorAll('[data-testid=cw-toggle]')){const w=S.words.find(x=>x.id===cb.closest('[data-id]').dataset.id);cb.checked=!!(w&&w.enabled);}
+  for(const cb of $('bwRows').querySelectorAll('[data-testid=bw-toggle]'))cb.checked=!off.has(cb.closest('[data-word]').dataset.word);
+}
+function cwShowPick(){for(const b of $('cwGrid').children)b.setAttribute('aria-pressed',String(b.dataset.emoji===cwPick));}
+function cwClear(){for(const l of LANGS)$(CW_IN[l]).value='';cwPick='';cwShowPick();$('cwErr').textContent='';}
+function wipeWords(){cwClear();cwSig='';$('cwList').textContent='';$('wordsSummary').textContent='';
+  $('wordsEditor').hidden=true;$('wordsEdit').textContent='Choose words';$('wordsEdit').setAttribute('aria-expanded','false');$('wordsCard').hidden=true;}
+// R8–R10, first failure only; out gets the cleaned texts (null when empty)
+function cwCheck(out){
+  for(const l of LANGS){const v=normWord($(CW_IN[l]).value);out[l]=v||null;}
+  for(const l of LANGS)if(S.settings[l]&&!out[l])return WORD_MSG.need[l];
+  for(const l of LANGS)if(out[l]&&!wordChars(out[l]))return WORD_MSG.chars;
+  for(const l of LANGS)if(out[l]&&cps(out[l])>WORD_MAX)return WORD_MSG.len;
+  if(!CUSTOM_EMOJI.includes(cwPick))return WORD_MSG.pic;
+  if(customWords().filter(w=>!w.deleted).length>=WORD_LIMIT)return WORD_MSG.limit;
+  return null;
+}
+// changes only while the parent view is up (R7); the checkbox snaps back otherwise
+const canEdit=()=>A.ready&&!inSession();
+function setOff(ids){S.settings.off=cleanOff(ids);save();render();}
+if(ACCT){
+  for(const e of CUSTOM_EMOJI){const b=document.createElement('button');b.type='button';b.dataset.testid='cw-emoji';b.dataset.emoji=e;b.setAttribute('aria-pressed','false');b.setAttribute('aria-label',e);b.textContent=e;$('cwGrid').appendChild(b);}
+  for(const o of OBJECTS){const lab=document.createElement('label');lab.className='wrow';lab.dataset.testid='bw-row';lab.dataset.word=o.id;
+    const cb=document.createElement('input');cb.type='checkbox';cb.dataset.testid='bw-toggle';cb.checked=true;
+    const e=document.createElement('span');e.className='we';e.textContent=o.e;
+    const t=document.createElement('span');t.className='wt';t.textContent=o.en+' · '+o.de+' · '+o.es;
+    lab.append(cb,e,t);$('bwRows').appendChild(lab);}
+  $('wordsEdit').addEventListener('click',()=>{const ed=$('wordsEditor'),open=ed.hidden;ed.hidden=!open;
+    $('wordsEdit').textContent=open?'Done':'Choose words';$('wordsEdit').setAttribute('aria-expanded',String(open));});
+  $('cwGrid').addEventListener('click',e=>{const b=e.target.closest('[data-emoji]');if(!b)return;cwPick=cwPick===b.dataset.emoji?'':b.dataset.emoji;cwShowPick();});
+  $('cwForm').addEventListener('submit',e=>{e.preventDefault();if(!canEdit())return;
+    const v={},err=cwCheck(v);$('cwErr').textContent=err||'';if(err)return;
+    S.words.push({id:uuid(),emoji:cwPick,en:v.en,de:v.de,es:v.es,enabled:true,deleted:false,changed_at:new Date().toISOString()});
+    cwClear();save();render();});
+  $('cwList').addEventListener('change',e=>{const cb=e.target.closest('[data-testid=cw-toggle]');if(!cb)return;
+    const w=S.words.find(x=>x.id===cb.closest('[data-id]').dataset.id);
+    if(!canEdit()||!w||w.deleted)return render();
+    w.enabled=cb.checked;touch(w);save();render();});
+  $('cwList').addEventListener('click',e=>{const b=e.target.closest('[data-testid=cw-delete]');if(!b||!canEdit())return;
+    const w=S.words.find(x=>x.id===b.closest('[data-id]').dataset.id);if(!w||w.deleted)return;
+    // the second dialog allowed in account mode, parent view only (R5, QA E-9)
+    if(!confirm(`Delete "${firstText(w)}"? Turns already played stay in the log.`))return;
+    w.deleted=true;touch(w);save();render();});
+  $('bwRows').addEventListener('change',e=>{const cb=e.target.closest('[data-testid=bw-toggle]');if(!cb)return;if(!canEdit())return render();
+    const id=cb.closest('[data-word]').dataset.word,off=new Set(cleanOff(S.settings.off));if(cb.checked)off.delete(id);else off.add(id);setOff([...off]);});
+  $('bwAllOn').addEventListener('click',()=>{if(canEdit())setOff([]);});
+  $('bwAllOff').addEventListener('click',()=>{if(canEdit())setOff(OBJECTS.map(o=>o.id));});
+}
 
 // ---------- flush / pull triggers ----------
 window.addEventListener('online',()=>{if(A.ready)syncAll();else if(A.retry&&!$('scrWait').hidden)A.retry();});
