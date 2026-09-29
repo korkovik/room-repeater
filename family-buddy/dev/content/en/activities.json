@@ -1,0 +1,654 @@
+{
+  "schema": "fb-activities/1",
+  "lang": "en",
+  "contentVersion": "2026.10.0",
+  "activities": [
+    {
+      "id": "a-room-repeater",
+      "ageFromMonths": 18,
+      "ageToMonths": 48,
+      "setting": "indoor",
+      "minutes": 10,
+      "module": "room-repeater",
+      "title": "Room Repeater: first words in English",
+      "steps": [
+        "Room Repeater is a separate picture-and-word game for ages 1.5 to 4.",
+        "Your child taps a picture, hears the word and tries to say it. You sit close and cheer.",
+        "One short session a day is plenty."
+      ],
+      "why": "A few playful minutes with new words, side by side with you.",
+      "sources": [
+        {
+          "title": "Room Repeater",
+          "publisher": "Room Repeater",
+          "url": "https://korkovik.github.io/room-repeater/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-sock-pairs",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "setting": "indoor",
+      "minutes": 10,
+      "title": "Sock pairs",
+      "steps": [
+        "Put 4 to 6 pairs of clean socks in a pile on the floor.",
+        "Hold one up and name its colour: \"A blue sock. Where's the other blue one?\"",
+        "Cheer each pair you find together, then swap roles."
+      ],
+      "why": "Matching and naming colours together builds early thinking and new words, with you as the play partner.",
+      "sources": [
+        {
+          "title": "Positive Parenting Tips: Toddlers (1–2 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-1-2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Baby and toddler play ideas",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/baby/babys-development/play-and-learning/baby-and-toddler-play-ideas/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-kitchen-helper",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "setting": "indoor",
+      "minutes": 10,
+      "title": "Little kitchen helper",
+      "steps": [
+        "Give a safe job: washing big vegetables in a bowl of water, or stirring with a wooden spoon.",
+        "Describe what you both do: \"We wash the carrot. Splash!\"",
+        "Stay within arm's reach, and keep knives, hot pans and small bits of food away."
+      ],
+      "why": "Copying you with real tasks helps toddlers feel part of the family and brings lots of new words.",
+      "sources": [
+        {
+          "title": "Positive Parenting Tips: Toddlers (1–2 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-1-2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 18 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/18-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-teddy-picnic",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "setting": "indoor",
+      "minutes": 10,
+      "title": "Teddy's picnic",
+      "steps": [
+        "Sit a teddy and a doll on a blanket with plastic cups and plates.",
+        "Offer teddy a pretend drink, then pass the cup on: \"Would teddy like some too?\"",
+        "Follow your child's idea, even if teddy suddenly goes to sleep."
+      ],
+      "why": "Pretend play with simple props lets many toddlers try out everyday life and take turns with you.",
+      "sources": [
+        {
+          "title": "Milestones by 18 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/18-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (1–2 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-1-2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-treasure-walk",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "setting": "outdoor",
+      "minutes": 15,
+      "title": "Treasure walk",
+      "steps": [
+        "Take a bag or basket to a park or courtyard.",
+        "Collect big treasures together: large leaves, pine cones, sticks longer than your hand.",
+        "Name each one and compare: \"Big leaf, small leaf.\" Make sure nothing goes in the mouth."
+      ],
+      "why": "Exploring outdoors with you feeds curiosity and gives you lots to talk about.",
+      "sources": [
+        {
+          "title": "Positive Parenting Tips: Toddlers (1–2 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-1-2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Physical activity guidelines for children (under 5 years)",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-children-under-five-years/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-copy-me",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "setting": "outdoor",
+      "minutes": 10,
+      "title": "Copy me",
+      "steps": [
+        "Find a safe grassy spot away from the road.",
+        "Walk, stomp, tiptoe or crouch, and invite your child to copy you.",
+        "Swap: now you copy them, and make a big deal of their moves."
+      ],
+      "why": "Moving together builds balance, and taking turns to lead shows your child that their ideas count.",
+      "sources": [
+        {
+          "title": "Milestones by 18 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/18-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Physical activity guidelines for children (under 5 years)",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-children-under-five-years/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-puddle-stomp",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "setting": "outdoor",
+      "minutes": 10,
+      "title": "Puddle stomp (rainy days)",
+      "steps": [
+        "After rain, put on wellies and waterproofs. Spring and autumn are ideal.",
+        "Hold hands and stomp into a shallow puddle together: one, two, three, splash!",
+        "Stay within arm's reach and skip puddles near the road."
+      ],
+      "why": "Big, joyful movements and a shared laugh are a simple way to connect, and wet boots are part of the fun.",
+      "sources": [
+        {
+          "title": "Positive Parenting Tips: Toddlers (1–2 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-1-2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Physical activity guidelines for children (under 5 years)",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-children-under-five-years/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-feelings-faces",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "setting": "indoor",
+      "minutes": 10,
+      "title": "Feelings faces",
+      "steps": [
+        "Sit face to face, or together in front of a mirror.",
+        "Make a happy, sad, surprised or cross face and name it: \"This is my sad face.\"",
+        "Now your child makes a face and you guess the feeling."
+      ],
+      "why": "Naming feelings in play gives many children words for what they feel, and shows every feeling is welcome with you.",
+      "sources": [
+        {
+          "title": "Milestones by 2 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (2–3 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-2-3-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-box-den",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "setting": "indoor",
+      "minutes": 20,
+      "title": "Cosy den",
+      "steps": [
+        "Turn a big cardboard box on its side, or drape a blanket over two chairs.",
+        "Crawl in together with a book or a teddy and read in your den.",
+        "Take turns inviting guests: \"Knock knock, who's there?\""
+      ],
+      "why": "A small den is a cosy place for closeness and pretend play, and many two-year-olds love being \"inside\".",
+      "sources": [
+        {
+          "title": "Milestones by 30 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/30-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (2–3 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-2-3-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-tidy-song",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "setting": "indoor",
+      "minutes": 5,
+      "title": "Tidy-up song",
+      "steps": [
+        "Pick a short tune and sing: \"Blocks go in the box, in the box…\"",
+        "Put one toy away yourself, then hand one to your child.",
+        "Celebrate the end with a high five."
+      ],
+      "why": "Simple requests set to a song turn tidying into a shared game rather than a battle.",
+      "sources": [
+        {
+          "title": "Milestones by 30 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/30-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (2–3 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-2-3-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-kick-chase",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "setting": "outdoor",
+      "minutes": 15,
+      "title": "Kick and chase",
+      "steps": [
+        "Take a big soft ball to a park or courtyard, away from the road.",
+        "Kick it gently to each other, then chase it together.",
+        "Cheer every try, not just the goals."
+      ],
+      "why": "Kicking and running build strength and coordination, and cheering the effort shows you enjoy playing together.",
+      "sources": [
+        {
+          "title": "Milestones by 2 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Physical activity guidelines for children (under 5 years)",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-children-under-five-years/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-colour-hunt",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "setting": "outdoor",
+      "minutes": 15,
+      "title": "Colour hunt",
+      "steps": [
+        "Pick one colour for the walk, for example red.",
+        "Point out everything red you spot: a car, a door, a flower. Hold hands near the road.",
+        "Let your child choose the colour for the next round."
+      ],
+      "why": "Spotting things together turns an ordinary walk into a game full of words and pointing.",
+      "sources": [
+        {
+          "title": "Milestones by 30 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/30-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (2–3 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-2-3-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-jump-lines",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "setting": "outdoor",
+      "minutes": 10,
+      "title": "Jump the line",
+      "steps": [
+        "Find a line on a park path, or draw one in the sandpit with your finger.",
+        "Show a two-foot jump over the line, then hold hands and jump together.",
+        "Count the jumps, or make animal sounds as you land."
+      ],
+      "why": "Jumping with both feet is a new skill for many children around this age, and doing it with you makes it brave and fun.",
+      "sources": [
+        {
+          "title": "Milestones by 30 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/30-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Physical activity guidelines for children (under 5 years)",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-children-under-five-years/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-story-turns",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "setting": "indoor",
+      "minutes": 15,
+      "title": "Story in turns",
+      "steps": [
+        "Start a story with one sentence: \"One day, a hedgehog found a key…\"",
+        "Take turns adding one sentence each.",
+        "At the end ask: \"What happened first? And then?\""
+      ],
+      "why": "Building a story in turns practises telling events in order and listening, and many four-year-olds love silly twists.",
+      "sources": [
+        {
+          "title": "Milestones by 5 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Preschoolers (3–5 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/preschooler-3-5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-face-plate",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "setting": "indoor",
+      "minutes": 20,
+      "title": "Funny-face sandwich plate",
+      "steps": [
+        "Wash hands together and set out bread, a soft spread and a few vegetables.",
+        "Let your child spread with a blunt knife and arrange a face on the plate.",
+        "Eat it together and talk about the best part of the day."
+      ],
+      "why": "Real kitchen jobs build independence and fine motor skills, and sharing the result is a moment of closeness.",
+      "sources": [
+        {
+          "title": "Positive Parenting Tips: Preschoolers (3–5 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/preschooler-3-5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 4 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/4-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-own-board-game",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "setting": "indoor",
+      "minutes": 20,
+      "title": "Your own board game",
+      "steps": [
+        "Draw a winding path of 15 squares on paper, with a start and a finish.",
+        "Use a die and two bottle caps as pieces.",
+        "Agree on one special rule together, like \"land on a star, jump once\"."
+      ],
+      "why": "Games with turns and rules practise waiting, counting and coping with losing, which is easiest with a calm grown-up.",
+      "sources": [
+        {
+          "title": "Milestones by 5 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Preschoolers (3–5 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/preschooler-3-5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-hop-trail",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "setting": "outdoor",
+      "minutes": 15,
+      "title": "Hop trail",
+      "steps": [
+        "In a park, mark a trail with sticks or leaves: hop, jump, walk on tiptoe.",
+        "Take turns choosing the next move.",
+        "Try hopping on one foot, holding hands if that helps."
+      ],
+      "why": "Hopping and balancing build strength and confidence, and taking turns gives your child a say in the game.",
+      "sources": [
+        {
+          "title": "Milestones by 5 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Physical activity guidelines for children (under 5 years)",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-children-under-five-years/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-question-walk",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "setting": "outdoor",
+      "minutes": 20,
+      "title": "Question walk",
+      "steps": [
+        "On a walk, take turns asking \"why\" and \"how\" questions: \"Why do leaves fall?\"",
+        "Guess the answers together before anyone explains.",
+        "Hold hands when you cross a road."
+      ],
+      "why": "Wondering aloud together shows that questions are welcome, and builds language and reasoning.",
+      "sources": [
+        {
+          "title": "Milestones by 5 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Preschoolers (3–5 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/preschooler-3-5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Child development",
+          "publisher": "UNICEF Parenting",
+          "url": "https://www.unicef.org/parenting/child-development",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "a-shadow-tag",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "setting": "outdoor",
+      "minutes": 10,
+      "title": "Shadow tag (sunny days)",
+      "steps": [
+        "On a sunny day, find an open space in a park or courtyard, away from the road.",
+        "Try to step on each other's shadows, then make shadow shapes together.",
+        "Notice how shadows are long in the morning and evening and short at midday."
+      ],
+      "why": "Running games with simple rules bring energy and laughter, and shadows spark curiosity about the world.",
+      "sources": [
+        {
+          "title": "Milestones by 4 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/4-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Physical activity guidelines for children (under 5 years)",
+          "publisher": "NHS",
+          "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-children-under-five-years/",
+          "accessed": "2026-09-28",
+          "licence": "link-only"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    }
+  ]
+}

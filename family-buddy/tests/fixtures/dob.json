@@ -1,0 +1,30 @@
+{
+  "today": "2026-10-15",
+  "note": "test-plan.md §1.5; every row computed with spec R9. months is clamped at 0 for the future DOB.",
+  "rows": [
+    { "key": "today", "dob": "2026-10-15", "months": 0, "state": "pre", "start": "2027-10-15", "rr": false, "en": "less than a week", "cs": "méně než týden" },
+    { "key": "m7", "dob": "2026-03-01", "months": 7, "state": "pre", "start": "2027-03-01", "rr": false, "en": "7 months", "cs": "7 měsíců" },
+    { "key": "m11", "dob": "2025-11-15", "months": 11, "state": "pre", "start": "2026-11-15", "rr": false, "en": "11 months", "cs": "11 měsíců" },
+    { "key": "m12", "dob": "2025-10-15", "months": 12, "state": "unwritten", "stage": "m12-15", "rr": false, "en": "12 months", "cs": "12 měsíců" },
+    { "key": "m17", "dob": "2025-05-15", "months": 17, "state": "unwritten", "stage": "m15-18", "rr": false, "en": "17 months", "cs": "17 měsíců" },
+    { "key": "m18", "dob": "2025-04-15", "months": 18, "state": "written", "stage": "m18-24", "rr": true, "en": "18 months", "cs": "18 měsíců" },
+    { "key": "ema", "dob": "2025-01-31", "months": 20, "state": "written", "stage": "m18-24", "rr": true, "en": "20 months", "cs": "20 měsíců" },
+    { "key": "m23", "dob": "2024-10-16", "months": 23, "state": "written", "stage": "m18-24", "rr": true, "en": "23 months", "cs": "23 měsíců" },
+    { "key": "m24", "dob": "2024-10-15", "months": 24, "state": "written", "stage": "m24-30", "rr": true, "en": "2 years", "cs": "2 roky" },
+    { "key": "m25", "dob": "2024-09-15", "months": 25, "state": "written", "stage": "m24-30", "rr": true, "en": "2 years 1 month", "cs": "2 roky a 1 měsíc" },
+    { "key": "m30", "dob": "2024-04-15", "months": 30, "state": "unwritten", "stage": "m30-36", "rr": true, "en": "2 years 6 months", "cs": "2 roky a 6 měsíců" },
+    { "key": "m42", "dob": "2023-04-15", "months": 42, "state": "unwritten", "stage": "m42-48", "rr": true, "en": "3 years 6 months", "cs": "3 roky a 6 měsíců" },
+    { "key": "m47", "dob": "2022-11-15", "months": 47, "state": "unwritten", "stage": "m42-48", "rr": true, "en": "3 years 11 months", "cs": "3 roky a 11 měsíců" },
+    { "key": "m48", "dob": "2022-10-15", "months": 48, "state": "written", "stage": "m48-60", "rr": false, "en": "4 years", "cs": "4 roky" },
+    { "key": "m52", "dob": "2022-06-01", "months": 52, "state": "written", "stage": "m48-60", "rr": false, "en": "4 years 4 months", "cs": "4 roky a 4 měsíce" },
+    { "key": "m59", "dob": "2021-11-15", "months": 59, "state": "written", "stage": "m48-60", "rr": false, "en": "4 years 11 months", "cs": "4 roky a 11 měsíců" },
+    { "key": "m60", "dob": "2021-10-15", "months": 60, "state": "post", "rr": false, "en": "5 years", "cs": "5 let" },
+    { "key": "m65", "dob": "2021-05-10", "months": 65, "state": "post", "rr": false, "en": "5 years 5 months", "cs": "5 let a 5 měsíců" },
+    { "key": "m71", "dob": "2020-10-16", "months": 71, "state": "post", "rr": false, "en": "5 years 11 months", "cs": "5 let a 11 měsíců" },
+    { "key": "future", "dob": "2026-11-01", "months": 0, "state": "pre", "start": "2027-11-01", "rr": false, "en": "less than a week", "cs": "méně než týden" }
+  ],
+  "rejected": [
+    { "key": "m72", "dob": "2020-10-15", "error": "dobTooOld" },
+    { "key": "tomorrow", "dob": "2026-10-16", "error": "dobFuture" }
+  ]
+}

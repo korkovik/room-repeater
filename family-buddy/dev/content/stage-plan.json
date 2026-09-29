@@ -1,0 +1,48 @@
+{
+  "coverage": {
+    "fromMonths": 12,
+    "toMonths": 60
+  },
+  "stages": [
+    {
+      "id": "m12-15",
+      "ageFromMonths": 12,
+      "ageToMonths": 15
+    },
+    {
+      "id": "m15-18",
+      "ageFromMonths": 15,
+      "ageToMonths": 18
+    },
+    {
+      "id": "m18-24",
+      "ageFromMonths": 18,
+      "ageToMonths": 24
+    },
+    {
+      "id": "m24-30",
+      "ageFromMonths": 24,
+      "ageToMonths": 30
+    },
+    {
+      "id": "m30-36",
+      "ageFromMonths": 30,
+      "ageToMonths": 36
+    },
+    {
+      "id": "m36-42",
+      "ageFromMonths": 36,
+      "ageToMonths": 42
+    },
+    {
+      "id": "m42-48",
+      "ageFromMonths": 42,
+      "ageToMonths": 48
+    },
+    {
+      "id": "m48-60",
+      "ageFromMonths": 48,
+      "ageToMonths": 60
+    }
+  ]
+}

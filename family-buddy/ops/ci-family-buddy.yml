@@ -1,0 +1,55 @@
+# Family Buddy checks for GitHub Actions (architecture.md §4 "CI on GitHub is optional in (b)").
+#
+# This file is NOT active. Dispatch's token has no Workflows permission, so Tom uploads it by hand:
+#   (b) room-repeater repo: copy to .github/workflows/ci-family-buddy.yml (keep FB_DIR: family-buddy).
+#   (a) korkovik/family-buddy repo: copy to .github/workflows/ci.yml and set FB_DIR: "." .
+# The release gate (validate-content.mjs --release, spec C12) runs on the uat branch and on
+# pull requests into main, i.e. the uat -> main release PR in (a).
+name: Family Buddy checks
+
+on:
+  push:
+    branches: [dev, uat, 'feature/fb-*']
+    paths: ['family-buddy/**', '.github/workflows/ci-family-buddy.yml']
+  pull_request:
+    branches: [dev, uat, main]
+
+permissions:
+  contents: read
+
+env:
+  FB_DIR: family-buddy
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ${{ env.FB_DIR }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 (resolved 2026-09-28)
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4 (resolved 2026-09-28)
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ env.FB_DIR }}/package-lock.json
+      - run: npm ci
+      - name: Typecheck, lint, unit tests, content validator
+        run: npm run check
+      - name: Release gate (C12)
+        if: github.ref == 'refs/heads/uat' || github.base_ref == 'main'
+        run: npm run validate:release
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+      - name: End-to-end tests (Chromium + WebKit, iPhone 13)
+        run: npm run test:e2e
+        env:
+          CI: 'true'
+          FB_E2E_WEBKIT: '1'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 (resolved 2026-09-28)
+        if: failure()
+        with:
+          name: playwright-report
+          path: ${{ env.FB_DIR }}/test-results
+          retention-days: 7

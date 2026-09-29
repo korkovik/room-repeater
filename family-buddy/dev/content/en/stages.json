@@ -1,0 +1,148 @@
+{
+  "schema": "fb-stages/1",
+  "lang": "en",
+  "contentVersion": "2026.10.0",
+  "coverage": {
+    "complete": false
+  },
+  "stages": [
+    {
+      "id": "m18-24",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "title": "18–24 months: little explorer, big feelings",
+      "insight": "Many children around this age walk without support, climb onto the sofa and point to show you what caught their eye. First words arrive, often just a handful at first, and many toddlers copy what you do around the home. Feelings are big and change fast. Your calm presence and simple daily routines give a safe base to explore from.",
+      "takeaways": [
+        "Talk about what you both see and add a word: \"Ball. A red ball.\" Short, warm back-and-forth helps more than drilling words.",
+        "Let them help with small jobs, like carrying a spoon or wiping the table. Copying you is how many toddlers learn.",
+        "Offer two simple choices (\"the red cup or the blue one?\") and keep sleep and meal routines steady."
+      ],
+      "sources": [
+        {
+          "title": "Milestones by 18 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/18-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 2 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (1–2 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-1-2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Nurturing care for early childhood development (framework)",
+          "publisher": "WHO, UNICEF, World Bank Group",
+          "url": "https://nurturing-care.org/resources/Nurturing_Care_Framework_en.pdf",
+          "accessed": "2026-09-28",
+          "licence": "CC-BY-NC-SA-3.0-IGO"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "m24-30",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "title": "24–30 months: two words, lots of pretending",
+      "insight": "Many children around two put two words together, run, kick a ball and start pretend play, like feeding a teddy or chatting on a toy phone. They often watch your face to work out how to react to something new. Wanting to do things without help is common, and so are loud protests when it doesn't work out.",
+      "takeaways": [
+        "Join their pretend games and let them lead. Name feelings as they happen: \"You're cross because the tower fell.\"",
+        "Read together every day and let them point and name. Ask simple questions: \"Where's the dog?\"",
+        "Allow time for things they want to do without help, like putting on a hat, and offer choices with no wrong answer."
+      ],
+      "sources": [
+        {
+          "title": "Milestones by 2 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 30 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/30-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (2–3 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-2-3-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Nurturing care for early childhood development (framework)",
+          "publisher": "WHO, UNICEF, World Bank Group",
+          "url": "https://nurturing-care.org/resources/Nurturing_Care_Framework_en.pdf",
+          "accessed": "2026-09-28",
+          "licence": "CC-BY-NC-SA-3.0-IGO"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "m48-60",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "title": "4–5 years: stories, rules and big questions",
+      "insight": "Many children around four to five tell stories with a beginning and an end, ask endless \"why?\" questions and enjoy games with simple rules and turns. Many hop on one foot, count to ten and recognise some letters. Friends matter more, and so does feeling capable: small jobs at home and real choices help.",
+      "takeaways": [
+        "Answer \"why?\" with a question back (\"What do you think?\") and wonder together instead of lecturing.",
+        "Play simple games with rules and turns. Losing sometimes is part of it; stay calm and name the feeling.",
+        "Give a small real job at home, like putting spoons on the table, and say thank you for the help."
+      ],
+      "sources": [
+        {
+          "title": "Milestones by 4 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/4-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 5 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Preschoolers (3–5 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/preschooler-3-5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Nurturing care for early childhood development (framework)",
+          "publisher": "WHO, UNICEF, World Bank Group",
+          "url": "https://nurturing-care.org/resources/Nurturing_Care_Framework_en.pdf",
+          "accessed": "2026-09-28",
+          "licence": "CC-BY-NC-SA-3.0-IGO"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    }
+  ]
+}

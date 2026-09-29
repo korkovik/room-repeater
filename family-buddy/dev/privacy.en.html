@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>Privacy · Family Buddy</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/env.js"></script>
+</head>
+<body>
+  <div class="wrap">
+  <header class="topbar">
+    <a class="button secondary" href="./">Back</a>
+  </header>
+  <h1>Privacy</h1>
+  <main class="text-page" data-testid="privacy-text">
+    <p><strong>Version 1.0 · effective {{EFFECTIVE_DATE}}</strong></p>
+    <p><strong>In short:</strong> Your child's name (or nickname) and date of birth stay on this device only. We never receive them, can't see them and don't have them. No cookies, no analytics, no ads.</p>
+    <h2>Who runs the app</h2>
+    <p>Family Buddy is a free, non-commercial project run by {{CONTROLLER_NAME}} (&quot;we&quot;). Contact: {{CONTACT_EMAIL}}.</p>
+    <h2>Your child's details stay on your device</h2>
+    <ul>
+      <li><strong>What the app stores:</strong> your child's name or nickname (a nickname is fine), date of birth and your chosen language. If you mark an activity as done, it also stores which activity and when.</li>
+      <li><strong>Where:</strong> only in this browser's storage (localStorage) on this device. While you fill in the first form, the app briefly keeps what you've typed in this tab's storage (sessionStorage), so it isn't lost if you open this page; it is deleted when you submit the form. The app never sends these details anywhere, to us or anyone else, and the addresses it loads never contain them.</li>
+      <li><strong>Why:</strong> to work out your child's age, show content for that age, and save you from entering it every time.</li>
+      <li><strong>How to delete them:</strong> in Settings, choose &quot;Forget this child&quot;. Clearing this site's data in your browser settings deletes them too.</li>
+      <li><strong>Good to know:</strong> anyone with access to your device and browser can see the details in the app. On iPhone, Safari may delete a website's data if you don't open it for several days. Adding the app to your Home Screen helps.</li>
+      <li>We don't have these details, so we can't provide, correct or restore them. They are entirely in your hands.</li>
+    </ul>
+    <h2>When you open the app: hosting on GitHub Pages</h2>
+    <p>The app is a static website hosted on GitHub Pages by GitHub, Inc. (USA, part of Microsoft). As with any website, your browser sends the server technical data when the page loads: IP address, browser type, time and the page address. According to its documentation, GitHub logs visitors' IP addresses for security purposes. We don't see or use these logs.</p>
+    <ul>
+      <li><strong>Purpose and legal basis:</strong> delivering and securing the website, which is a legitimate interest (Art. 6(1)(f) GDPR).</li>
+      <li><strong>Transfer to the USA:</strong> GitHub is certified under the EU–US Data Privacy Framework, which is covered by the European Commission's adequacy decision (EU) 2023/1795.</li>
+      <li><strong>How long:</strong> GitHub decides the retention period. See its privacy statement: <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement</a></li>
+    </ul>
+    <h2>Cookies and similar technologies</h2>
+    <p>We use no cookies, analytics, ads, tracking code, or fonts or scripts from other servers. The app uses browser storage only to remember what you enter, and, when installed, to keep the app files for offline use. This is strictly necessary for the service you ask for, so no consent is required (Section 89(3) of Czech Act No. 127/2005 Coll.; Art. 5(3) ePrivacy Directive).</p>
+    <h2>Links to other websites</h2>
+    <p>The Room Repeater card and the source links (e.g. CDC) open other websites. We pass them no details about your child. Those sites have their own privacy rules. Room Repeater is a separate app with its own privacy information.</p>
+    <h2>Your rights</h2>
+    <p>You control your child's details directly in the app. For the technical data sent when the page loads, you have the rights of access, rectification, erasure, restriction and objection (Art. 15–21 GDPR). Email us at {{CONTACT_EMAIL}}. For logs held only by GitHub, we'll tell you how to contact GitHub directly. You can also complain to the Czech Office for Personal Data Protection (ÚOOÚ, Pplk. Sochora 27, 170 00 Prague 7, <a href="https://uoou.gov.cz" target="_blank" rel="noopener noreferrer">https://uoou.gov.cz</a>) or to the supervisory authority where you live.</p>
+    <h2>Changes</h2>
+    <p>If the way we handle data changes (for example, if we add syncing between devices), we will update this page first and announce the change in the app.</p>
+  </main>
+  <footer class="footer" data-testid="footer">
+    <p>Not medical advice. Every child grows at their own pace. If anything about your child's development worries you, talk to your child's doctor.</p>
+    <nav>
+      <a href="./#about">About &amp; sources</a>
+      <a href="privacy.en.html" aria-current="page">Privacy</a>
+    </nav>
+  </footer>
+  </div>
+</body>
+</html>

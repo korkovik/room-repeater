@@ -1,0 +1,148 @@
+{
+  "schema": "fb-stages/1",
+  "lang": "cs",
+  "contentVersion": "2026.10.0",
+  "coverage": {
+    "complete": false
+  },
+  "stages": [
+    {
+      "id": "m18-24",
+      "ageFromMonths": 18,
+      "ageToMonths": 24,
+      "title": "18–24 měsíců: malý objevitel, velké emoce",
+      "insight": "Mnoho dětí kolem tohoto věku chodí bez opory, leze na gauč a ukazuje prstem na to, co je zaujalo. Přicházejí první slova, zpočátku často jen pár, a mnoho batolat napodobuje, co děláš doma. Emoce jsou silné a rychle se mění. Tvůj klid a jednoduchý denní rytmus dávají bezpečné zázemí, ze kterého se dá objevovat.",
+      "takeaways": [
+        "Povídej si o tom, co oba vidíte, a přidej slovo: „Míč. Červený míč.“ Krátké vřelé povídání pomáhá víc než drilování slov.",
+        "Nech dítě pomáhat s drobnostmi, třeba odnést lžíci nebo utřít stůl. Napodobování je pro mnoho batolat hlavní cesta učení.",
+        "Nabízej dvě jednoduché možnosti („červený, nebo modrý hrnek?“) a drž stálý rytmus spánku a jídla."
+      ],
+      "sources": [
+        {
+          "title": "Milestones by 18 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/18-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 2 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (1–2 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-1-2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Nurturing care for early childhood development (framework)",
+          "publisher": "WHO, UNICEF, World Bank Group",
+          "url": "https://nurturing-care.org/resources/Nurturing_Care_Framework_en.pdf",
+          "accessed": "2026-09-28",
+          "licence": "CC-BY-NC-SA-3.0-IGO"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "m24-30",
+      "ageFromMonths": 24,
+      "ageToMonths": 30,
+      "title": "24–30 měsíců: dvě slova a spousta hraní na něco",
+      "insight": "Mnoho dětí kolem dvou let spojí dvě slova, běhá, kope do míče a začíná si na něco hrát, třeba krmí medvídka nebo telefonuje do hračky. Děti v tomhle věku často sledují tvůj obličej, aby poznaly, jak na něco nového reagovat. Běžná je touha dělat všechno bez pomoci a stejně tak hlasitý protest, když to nejde.",
+      "takeaways": [
+        "Zapoj se do hraní na něco a nech dítě vést. Pojmenovávej emoce, když přijdou: „Zlobíš se, protože věž spadla.“",
+        "Čtěte si každý den a nech dítě ukazovat a pojmenovávat. Ptej se jednoduše: „Kde je pejsek?“",
+        "Dej čas na věci, které chce dítě zvládnout bez pomoci, třeba nasadit čepici, a nabízej volby bez špatné odpovědi."
+      ],
+      "sources": [
+        {
+          "title": "Milestones by 2 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/2-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 30 Months",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/30-months.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Toddlers (2–3 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/toddlers-2-3-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Nurturing care for early childhood development (framework)",
+          "publisher": "WHO, UNICEF, World Bank Group",
+          "url": "https://nurturing-care.org/resources/Nurturing_Care_Framework_en.pdf",
+          "accessed": "2026-09-28",
+          "licence": "CC-BY-NC-SA-3.0-IGO"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    },
+    {
+      "id": "m48-60",
+      "ageFromMonths": 48,
+      "ageToMonths": 60,
+      "title": "4–5 let: příběhy, pravidla a velké otázky",
+      "insight": "Mnoho dětí kolem čtyř až pěti let vypráví příběhy se začátkem a koncem, pořád se ptá „proč?“ a baví je hry s jednoduchými pravidly a střídáním. Mnohé skáčou po jedné noze, počítají do deseti a poznají některá písmena. Kamarádi jsou čím dál důležitější a stejně tak pocit, že něco zvládnou: pomáhají drobné úkoly doma a skutečné volby.",
+      "takeaways": [
+        "Na „proč?“ odpověz otázkou („Co myslíš ty?“) a přemýšlejte spolu místo dlouhého vysvětlování.",
+        "Hrajte jednoduché hry s pravidly a střídáním. Prohra k tomu patří; zůstaň v klidu a pojmenuj, co dítě cítí.",
+        "Svěř dítěti malý skutečný úkol, třeba prostřít lžíce na stůl, a poděkuj za pomoc."
+      ],
+      "sources": [
+        {
+          "title": "Milestones by 4 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/4-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Milestones by 5 Years",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/act-early/milestones/5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Positive Parenting Tips: Preschoolers (3–5 years old)",
+          "publisher": "CDC",
+          "url": "https://www.cdc.gov/child-development/positive-parenting-tips/preschooler-3-5-years.html",
+          "accessed": "2026-09-28",
+          "licence": "public-domain"
+        },
+        {
+          "title": "Nurturing care for early childhood development (framework)",
+          "publisher": "WHO, UNICEF, World Bank Group",
+          "url": "https://nurturing-care.org/resources/Nurturing_Care_Framework_en.pdf",
+          "accessed": "2026-09-28",
+          "licence": "CC-BY-NC-SA-3.0-IGO"
+        }
+      ],
+      "reviewed": {
+        "by": null,
+        "date": null
+      }
+    }
+  ]
+}

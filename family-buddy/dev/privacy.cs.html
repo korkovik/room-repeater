@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>Soukromí · Family Buddy</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/env.js"></script>
+</head>
+<body>
+  <div class="wrap">
+  <header class="topbar">
+    <a class="button secondary" href="./">Zpět</a>
+  </header>
+  <h1>Soukromí</h1>
+  <main class="text-page" data-testid="privacy-text">
+    <p><strong>Verze 1.0 · platí od {{EFFECTIVE_DATE}}</strong></p>
+    <p><strong>Stručně:</strong> Jméno (nebo přezdívka) a datum narození dítěte zůstávají jen v tomhle zařízení. Nikam je neposíláme, nevidíme je a nemáme je. Nepoužíváme cookies, analytiku ani reklamy.</p>
+    <h2>Kdo za aplikací stojí</h2>
+    <p>Family Buddy je bezplatný nekomerční projekt. Provozuje ho {{CONTROLLER_NAME}} (dále „my“). Kontakt: {{CONTACT_EMAIL}}.</p>
+    <h2>Údaje o dítěti zůstávají ve tvém zařízení</h2>
+    <ul>
+      <li><strong>Co aplikace ukládá:</strong> jméno nebo přezdívku dítěte (stačí přezdívka), datum narození a zvolený jazyk. Pokud označíš aktivitu jako hotovou, uloží se i to, kterou aktivitu a kdy.</li>
+      <li><strong>Kde:</strong> jen v úložišti prohlížeče (localStorage) v tomhle zařízení a v tomhle prohlížeči. Během vyplňování úvodního formuláře si aplikace rozepsané údaje krátce podrží v úložišti této karty (sessionStorage), aby se neztratily, když si otevřeš tuto stránku; po odeslání formuláře se smažou. Aplikace tyto údaje nikam neodesílá, ani nám, ani nikomu jinému. Adresy, které aplikace načítá, je nikdy neobsahují.</li>
+      <li><strong>K čemu:</strong> aby aplikace spočítala věk dítěte, ukázala obsah pro jeho věk a údaje se nemusely zadávat při každém otevření.</li>
+      <li><strong>Jak je smazat:</strong> v Nastavení zvol „Zapomenout dítě“. Údaje zmizí také, když v nastavení prohlížeče smažeš data této stránky.</li>
+      <li><strong>Dobré vědět:</strong> kdo má přístup k tvému zařízení a prohlížeči, může údaje v aplikaci vidět. Na iPhonu může Safari data webu smazat, pokud stránku několik dní neotevřeš. Pomáhá přidat si aplikaci na plochu.</li>
+      <li>Tyto údaje nemáme, takže ti je nemůžeme ani poskytnout, opravit nebo obnovit. Máš je plně ve své moci.</li>
+    </ul>
+    <h2>Když aplikaci otevřeš: hosting na GitHub Pages</h2>
+    <p>Aplikace je statická webová stránka, kterou hostuje služba GitHub Pages společnosti GitHub, Inc. (USA, patří do skupiny Microsoft). Jako u každé webové stránky pošle tvůj prohlížeč serveru při načtení technické údaje: IP adresu, typ prohlížeče, čas a adresu stránky. GitHub podle své dokumentace IP adresy návštěvníků ukládá z bezpečnostních důvodů. My tyto záznamy nevidíme a nepoužíváme.</p>
+    <ul>
+      <li><strong>Účel a právní základ:</strong> doručení a zabezpečení webu, tedy oprávněný zájem (čl. 6 odst. 1 písm. f) GDPR).</li>
+      <li><strong>Předání do USA:</strong> GitHub je certifikován v rámci EU–US Data Privacy Framework. Pro tento rámec vydala Evropská komise rozhodnutí o odpovídající ochraně (EU) 2023/1795.</li>
+      <li><strong>Jak dlouho:</strong> dobu uložení určuje GitHub. Více v jeho prohlášení o ochraně osobních údajů: <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement</a></li>
+    </ul>
+    <h2>Cookies a podobné technologie</h2>
+    <p>Nepoužíváme cookies, analytiku, reklamy, sledovací kódy ani písma nebo skripty z cizích serverů. Úložiště prohlížeče používáme jen k tomu, aby si aplikace pamatovala údaje, které do ní zadáš, a v nainstalované verzi také k uložení souborů aplikace pro použití bez připojení. To je nezbytné pro fungování aplikace, kterou používáš, a proto k tomu není potřeba souhlas (§ 89 odst. 3 zákona č. 127/2005 Sb.).</p>
+    <h2>Odkazy na jiné weby</h2>
+    <p>Karta Room Repeater a odkazy na zdroje (např. CDC) otevírají jiné weby. Nepředáváme jim žádné údaje o dítěti. Tyto weby mají vlastní pravidla ochrany soukromí. Room Repeater je samostatná aplikace s vlastními informacemi o zpracování údajů.</p>
+    <h2>Tvoje práva</h2>
+    <p>Údaje o dítěti máš plně pod kontrolou přímo v aplikaci. K technickým údajům při načtení stránky máš právo na přístup, opravu, výmaz, omezení zpracování a právo vznést námitku (čl. 15–21 GDPR). Napiš nám na {{CONTACT_EMAIL}}. U záznamů, které má jen GitHub, ti poradíme, jak se obrátit přímo na něj. Máš také právo podat stížnost u Úřadu pro ochranu osobních údajů (Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" target="_blank" rel="noopener noreferrer">https://uoou.gov.cz</a>).</p>
+    <h2>Změny</h2>
+    <p>Pokud se způsob zacházení s údaji změní (například kdybychom přidali synchronizaci mezi zařízeními), upravíme tuto stránku předem a změnu v aplikaci oznámíme.</p>
+  </main>
+  <footer class="footer" data-testid="footer">
+    <p>Nejde o lékařskou radu. Každé dítě má své tempo. Když tě na vývoji dítěte něco znepokojuje, poraď se s dětským lékařem.</p>
+    <nav>
+      <a href="./#about">O aplikaci a zdroje</a>
+      <a href="privacy.cs.html" aria-current="page">Soukromí</a>
+    </nav>
+  </footer>
+  </div>
+</body>
+</html>
