@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <!-- CSP (S6, architecture.md §9). Once RR_BACKENDS holds project URLs, add the exact https://<ref>.supabase.co hosts to connect-src. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' data:; connect-src 'self' https://bxtvadnywlcezpszpabp.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Room Repeater</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@500;700;800;900&display=swap">
@@ -612,7 +612,7 @@ const PILOT_KEY=ENV==='prod'?'rr-pilot-v1':'rr-pilot-v1-'+ENV;
 // PUBLIC values only: Project URL + anon key (Supabase → Project Settings → API).
 // Nothing else goes here: no other Supabase key, no database or mail credential (S2, AC20).
 const RR_BACKENDS={
-  dev: {url:'', anon:''},  // Tom pastes rr-nonprod values
+  dev: {url:'https://bxtvadnywlcezpszpabp.supabase.co', anon:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dHZhZG55d2xjZXpwc3pwYWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NTY0NjAsImV4cCI6MjEwNjAzMjQ2MH0.OoCSx7ljE7e9dQNa3yJcDFX5YOx742qjne88BShMtU4'},  // rr-nonprod (public URL + anon key only)
   uat: {url:'', anon:''},  // same values as dev
   prod:{url:'', anon:''}   // rr-prod, unused until I4 (PROD resolves to legacy in I1)
 };
