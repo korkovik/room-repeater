@@ -4,7 +4,7 @@ Two projects, both **EU Central (Frankfurt)**, free plan:
 
 | Project | Used by | Site URL | Redirect URLs (exact, nothing else) |
 |---|---|---|---|
-| `rr-nonprod` | DEV + UAT | `https://korkovik.github.io/room-repeater/uat/` | `https://korkovik.github.io/room-repeater/dev/` · `https://korkovik.github.io/room-repeater/uat/` |
+| `rr-nonprod` | DEV | `https://korkovik.github.io/room-repeater/dev/` | `https://korkovik.github.io/room-repeater/dev/` |
 | `rr-prod` | PROD (from I4) | `https://korkovik.github.io/room-repeater/` | `https://korkovik.github.io/room-repeater/` |
 
 Only two values leave the dashboard: **Project URL** and the **anon (public) key** (Project Settings → API). They go into `RR_BACKENDS` in the page. The service-role key, the database password and the SMTP password never go into the repo, the page, the board or a chat.

@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# ./promote.sh uat  : dev/index.html (+ dev/vendor/) -> uat/index.html (+ uat/vendor/)
-# ./promote.sh prod : uat/index.html (+ uat/vendor/) -> index.html (+ vendor/) (LIVE)
+# ./promote.sh prod : dev/index.html (+ dev/vendor/) -> index.html (+ vendor/) (LIVE)
 set -euo pipefail
 cd "$(dirname "$0")"
 case "${1:-}" in
-  uat)  src=dev/index.html; dst=uat/index.html ;;
-  prod) src=uat/index.html; dst=index.html ;;
-  *) echo "usage: $0 uat|prod" >&2; exit 2 ;;
+  prod) src=dev/index.html; dst=index.html ;;
+  *) echo "usage: $0 prod" >&2; exit 2 ;;
 esac
 [ -s "$src" ] || { echo "missing $src" >&2; exit 1; }
 cp "$src" "$dst"

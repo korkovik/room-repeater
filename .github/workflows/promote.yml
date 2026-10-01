@@ -3,10 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "uat = dev->uat, prod = uat->live"
+        description: "prod = dev -> live"
         required: true
         type: choice
-        options: [uat, prod]
+        options: [prod]
 permissions:
   contents: write
   pages: write
