@@ -177,6 +177,12 @@ textarea{width:100%;min-height:120px;font:13px/1.4 ui-monospace,monospace;border
 .tile .egg{width:22px;height:28px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;box-shadow:0 0 0 3px var(--line) inset}
 .shadow{display:inline-block;filter:var(--silhouette);opacity:.85;animation:wobble 1.6s ease-in-out infinite}
 #zooSay{min-height:48px;text-align:center;font-weight:800}
+/* a family member (WA, R-A8): base emoji, member 2+ wears an accessory top-right; the number badge only in the family strip.
+   Never rendered inside .shadow (the silhouette filter would blacken the accessory too). */
+.mem{position:relative;display:inline-block;line-height:1}
+.mem .acc{position:absolute;top:-.1em;right:-.25em;font-size:45%;line-height:1}
+.mem .num{position:absolute;bottom:-.15em;left:-.2em;font:900 30%/1.5 var(--font);min-width:1.5em;padding:0 .3em;border-radius:999px;background:var(--accent);color:var(--accent-ink);text-align:center}
+.family{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 18px;margin-top:12px;font-size:40px}
 
 /* ---------- accounts: sign-in and onboarding (I1) ---------- */
 .wrap{max-width:560px;margin:0 auto;padding:28px 16px;display:flex;flex-direction:column;gap:18px}
@@ -187,6 +193,9 @@ textarea{width:100%;min-height:120px;font:13px/1.4 ui-monospace,monospace;border
 .err{color:#C2453D;font-weight:800}
 .err:empty{display:none}
 button.linkbtn{background:none;box-shadow:none;color:var(--accent);text-decoration:underline;padding:6px 0}
+button.linkbtn.mini{padding:2px 0;font-size:12px}
+.wnote{margin-top:8px}
+.wnote:empty{display:none}
 label.opt{display:flex;align-items:center;gap:10px;padding:6px 0;font-weight:700}
 label.opt input{width:20px;height:20px;accent-color:var(--accent)}
 .drafthead{font-weight:900;color:#C2453D}
@@ -353,7 +362,7 @@ fieldset.langs legend{font-weight:800;padding:0}
       </div>
       <div class="today-side">
         <button type="button" class="card" id="friendsCard" aria-label="Animal friends — open Animals">
-          <div class="cardhead"><b>Animal friends</b><span class="count-pill" id="animalsCount">0 / 12</span></div>
+          <div class="cardhead"><b>Animal friends</b><span class="count-pill" id="animalsCount">0 friends</span></div>
           <div class="friends" id="friendRow" aria-hidden="true"></div>
           <div class="muted" id="animalsMeta"></div>
         </button>
@@ -425,9 +434,12 @@ fieldset.langs legend{font-weight:800;padding:0}
     </div>
     <div><h2>Session</h2>
       <div class="group">
+        <div class="set"><span><label for="optWords">Words per lesson</label><small id="optWordsHint" data-testid="words-hint"></small><button type="button" class="linkbtn mini" id="wordsRec" data-testid="words-rec" hidden>Use recommended</button></span><span class="stepper"><button type="button" id="wordsMinus" data-testid="words-minus" aria-label="Fewer words">−</button><input type="number" id="optWords" data-testid="words-per-lesson" min="2" max="8" value="2" inputmode="numeric"><button type="button" id="wordsPlus" data-testid="words-plus" aria-label="More words">+</button></span></div>
+        <label class="set"><span>Random each lesson<small>2–5 words, changes after each finished lesson</small></span><input type="checkbox" class="switch" id="optWordsRandom" data-testid="words-random"></label>
         <div class="set"><label for="optPics">Pictures per session</label><span class="stepper"><button type="button" id="picsMinus" aria-label="Fewer pictures">−</button><input type="number" id="optPics" min="6" max="30" value="8" inputmode="numeric"><button type="button" id="picsPlus" aria-label="More pictures">+</button></span></div>
         <label class="set"><span>I'll confirm each word<small>Skips speech recognition</small></span><input type="checkbox" class="switch" id="optParent"></label>
       </div>
+      <div class="muted wnote" id="optWordsNote" data-testid="words-note" aria-live="polite"></div>
     </div>
     <div class="btn2"><button class="primary" id="testBtn">Test sound</button><button class="soft" id="micBtn">Test microphone</button></div>
     <div class="muted" id="testOut"></div>
@@ -541,7 +553,10 @@ const OBJECTS=[
 const LOC={en:'en-US',de:'de-DE',es:'es-ES'};
 const PRAISE={en:'Yes!',de:'Ja!',es:'¡Sí!'};
 const LANGNAME={en:'English',de:'German',es:'Spanish'};
-// Her animals: one per finished session, always in this order, starting again after the last.
+// Her animals (WA, R-A1): one per finished session. Every animal has a family; the next gift goes to the family with the
+// fewest members (ties: roster order), so the first 12 keep the old order and the collection never runs out.
+// Single code points only; 🐿️ is U+1F43F + VS16 (needed for emoji presentation), written as an escape so the FE0F can't get lost.
+// 🦩 and 🦥 need Emoji 12 = Android 10+, which is also the minimum for current Chrome (139+).
 const ANIMALS=[
  {id:'rabbit',e:'🐇',en:'rabbit',de:'Hase',es:'conejo'},
  {id:'duck',e:'🦆',en:'duck',de:'Ente',es:'pato'},
@@ -555,7 +570,39 @@ const ANIMALS=[
  {id:'octopus',e:'🐙',en:'octopus',de:'Krake',es:'pulpo'},
  {id:'flamingo',e:'🦩',en:'flamingo',de:'Flamingo',es:'flamenco'},
  {id:'camel',e:'🐪',en:'camel',de:'Kamel',es:'camello'},
+ {id:'cat',e:'🐈',en:'cat',de:'Katze',es:'gato'},
+ {id:'dog',e:'🐕',en:'dog',de:'Hund',es:'perro'},
+ {id:'pig',e:'🐖',en:'pig',de:'Schwein',es:'cerdo'},
+ {id:'cow',e:'🐄',en:'cow',de:'Kuh',es:'vaca'},
+ {id:'horse',e:'🐎',en:'horse',de:'Pferd',es:'caballo'},
+ {id:'sheep',e:'🐑',en:'sheep',de:'Schaf',es:'oveja'},
+ {id:'goat',e:'🐐',en:'goat',de:'Ziege',es:'cabra'},
+ {id:'chick',e:'🐤',en:'chick',de:'Küken',es:'pollito'},
+ {id:'mouse',e:'🐁',en:'mouse',de:'Maus',es:'ratón'},
+ {id:'hedgehog',e:'🦔',en:'hedgehog',de:'Igel',es:'erizo'},
+ {id:'squirrel',e:'\u{1F43F}\uFE0F',en:'squirrel',de:'Eichhörnchen',es:'ardilla'},
+ {id:'bear',e:'🐻',en:'bear',de:'Bär',es:'oso'},
+ {id:'panda',e:'🐼',en:'panda',de:'Panda',es:'panda'},
+ {id:'koala',e:'🐨',en:'koala',de:'Koala',es:'koala'},
+ {id:'monkey',e:'🐒',en:'monkey',de:'Affe',es:'mono'},
+ {id:'lion',e:'🦁',en:'lion',de:'Löwe',es:'león'},
+ {id:'zebra',e:'🦓',en:'zebra',de:'Zebra',es:'cebra'},
+ {id:'hippo',e:'🦛',en:'hippo',de:'Nilpferd',es:'hipopótamo'},
+ {id:'kangaroo',e:'🦘',en:'kangaroo',de:'Känguru',es:'canguro'},
+ {id:'sloth',e:'🦥',en:'sloth',de:'Faultier',es:'perezoso'},
+ {id:'frog',e:'🐸',en:'frog',de:'Frosch',es:'rana'},
+ {id:'fish',e:'🐠',en:'fish',de:'Fisch',es:'pez'},
+ {id:'whale',e:'🐳',en:'whale',de:'Wal',es:'ballena'},
+ {id:'dolphin',e:'🐬',en:'dolphin',de:'Delfin',es:'delfín'},
+ {id:'crab',e:'🦀',en:'crab',de:'Krabbe',es:'cangrejo'},
+ {id:'ladybug',e:'🐞',en:'ladybug',de:'Marienkäfer',es:'mariquita'},
+ {id:'bee',e:'🐝',en:'bee',de:'Biene',es:'abeja'},
+ {id:'parrot',e:'🦜',en:'parrot',de:'Papagei',es:'loro'},
 ];
+// member 2+ of a family wears ACC[(k-2) % 12]; 🕶️ is U+1F576 + VS16. The member number is derived, never stored (R-A2).
+const ACC=['🎀','🎩','👑','🧢','\u{1F576}\uFE0F','🎈','🌸','⭐','🧣','👓','🎒','🌼'];
+const ANIMAL_IDX=new Map(ANIMALS.map((a,i)=>[a.id,i]));
+const ORDINAL=['second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'];
 // ---------- environment (DEV / UAT / PROD) ----------
 // From the URL path: .../dev/ -> DEV, .../uat/ -> UAT, else PROD. PROD keeps the original key.
 const ENV=(()=>{const m=location.pathname.match(/\/(dev|uat)(\/|$)/i);return m?m[1].toLowerCase():'prod';})();
@@ -595,7 +642,7 @@ if(ENV!=='prod'){
   b.style.cssText='position:sticky;top:0;z-index:3;pointer-events:none;text-align:center;font-weight:900;font-size:12px;letter-spacing:.04em;padding:5px 10px;color:#fff;background:'+(ENV==='dev'?'#6A55E0':'#D2691E');
   document.body.insertBefore(b,document.body.firstChild);
 }
-const S={log:[],dropped:[],earned:[],settings:{en:true,de:true,es:true,pics:8,parent:false}};
+const S={log:[],dropped:[],earned:[],settings:{en:true,de:true,es:true,pics:8,parent:false,lessonWords:'rec'}};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
 function save(){if(ACCT)return acctSave();if(BACKEND==='none')return;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 // her animals: one entry per finished session, only ever appended
@@ -608,6 +655,23 @@ const langs=()=>['en','de','es'].filter(l=>S.settings[l]);
 const key=(o,l)=>o+'|'+l;
 // Pictures per session. Settings saved before this held minutes instead, so a missing value means the default.
 const pics=()=>{const n=Math.round(+S.settings.pics);return Number.isFinite(n)?Math.min(30,Math.max(6,n)):8;};
+// ---------- words per lesson (WA, spec-wa R-W1, R-W4) ----------
+// The mode: 2…8 (fixed), 'rec' (follow the recommendation) or 'random'. Anything else (missing, corrupt) means 'rec'.
+const clampN=(n,lo,hi)=>Math.min(hi,Math.max(lo,n));
+function normLessonWords(v){
+  if(v==='rec'||v==='random')return v;
+  if(typeof v!=='number'&&!(typeof v==='string'&&v.trim()!==''))return 'rec';   // null, booleans, '' are not numbers
+  const n=Math.round(+v);return Number.isFinite(n)?clampN(n,2,8):'rec';}
+const lessonWordsMode=()=>normLessonWords(S.settings.lessonWords);
+// recommendation: floor(pictures / languages), never below 3 (Tom, 2026-10-01), at most 4; langs() always has ≥1
+const wordsRec=()=>clampN(Math.floor(pics()/langs().length),3,4);
+// FNV-1a 32-bit over UTF-8 (offset 0x811c9dc5, prime 0x01000193)
+function fnv1a32(s){let h=0x811c9dc5;for(const b of new TextEncoder().encode(s)){h^=b;h=Math.imul(h,0x01000193);}return h>>>0;}
+// lesson index k = gifts dated today, synced ones and unknown animals included (architecture-wa §6)
+const lessonIndex=()=>{const d=today();return S.earned.filter(g=>g&&typeof g==='object'&&g.day===d).length;};
+const randomWords=()=>2+fnv1a32(today()+'|'+lessonIndex())%4;
+// the word target T: a pure function of state, so preview, dinner and session always agree (architecture-wa §5)
+function wordsTarget(){const m=lessonWordsMode();return m==='rec'?wordsRec():m==='random'?randomWords():m;}
 
 // ---------- the word pool (I2a, spec-i2a R11, R12, R15) ----------
 // Word text never goes into HTML unescaped: templates use esc(), everything else textContent.
@@ -647,25 +711,35 @@ function stats(){
 
 // ---------- Prompt 02 as rules ----------
 function buildPlan(){
-  const m=stats(),d=today(),L=langs(),plan=[];
+  const m=stats(),d=today(),L=langs();
   // rule 4: drop after 3 days missed running, substitute easier (lower index) not-yet-heard object in same lang
   for(const p of Object.values(m)){
     if(!p.dropped&&p.missStreak>=3&&p.heard>0){S.dropped.push(key(p.obj.id,p.lang));p.dropped=true;}
   }
   save();
-  const yesterday=Object.values(m).filter(p=>L.includes(p.lang)&&!p.dropped&&p.last&&p.last!==d&&dayDiff(p.last,d)===1&&!p.days[p.last].said);
-  const stale=Object.values(m).filter(p=>L.includes(p.lang)&&!p.dropped&&p.heard>0&&p.last!==d&&dayDiff(p.last,d)>=4);
-  const push=(p,why)=>{if(!plan.find(x=>x.obj===p.obj.id&&x.lang===p.lang))plan.push({obj:p.obj.id,lang:p.lang,why});};
-  yesterday.forEach(p=>push(p,'miss'));
-  stale.forEach(p=>push(p,'stale'));
-  // rule 3: max two new objects (each in all active languages). An object stays new while any active language
-  // is unheard: a short session can show its English but not its German, and the German must still come up.
-  const unheard=o=>L.filter(l=>{const p=m[key(o.id,l)];return p&&p.heard===0&&!p.dropped;});
-  const newObjs=activeWords().filter(o=>unheard(o).length).slice(0,2);
-  newObjs.forEach(o=>unheard(o).forEach(l=>push(m[key(o.id,l)],'new')));
-  // fill with review of known pairs, freshest last
-  Object.values(m).filter(p=>L.includes(p.lang)&&!p.dropped&&p.heard>0&&p.last!==d).sort((a,b)=>(a.last>b.last?1:-1)).forEach(p=>push(p,'review'));
-  return plan;
+  // WA (spec-wa R-W2): pick N objects ("words"), then return their pairs. N = min(target, pictures, eligible objects).
+  const isMiss=p=>p.heard>0&&p.last!==d&&dayDiff(p.last,d)===1&&!p.days[p.last].said;
+  const isStale=p=>p.heard>0&&p.last!==d&&dayDiff(p.last,d)>=4;
+  // eligible: at least one pair in an active language that is not dropped
+  const objs=activeWords().map(o=>({o,ps:L.map(l=>m[key(o.id,l)]).filter(p=>p&&!p.dropped)})).filter(x=>x.ps.length);
+  const N=Math.min(wordsTarget(),pics(),objs.length);
+  const lastOf=x=>x.ps.reduce((mx,p)=>p.last&&p.last>mx?p.last:mx,'');
+  const misses=objs.filter(x=>x.ps.some(isMiss)),stale=objs.filter(x=>x.ps.some(isStale));
+  const fresh=objs.filter(x=>x.ps.some(p=>p.heard===0));
+  // review: oldest most-recent turn first, so objects heard today come last ("Play again" gets other objects)
+  const review=objs.filter(x=>x.ps.some(p=>p.heard>0)).map(x=>({x,t:lastOf(x)})).sort((a,b)=>a.t<b.t?-1:a.t>b.t?1:0).map(y=>y.x);
+  const chosen=[];
+  const take=(list,lim,max=Infinity)=>{let n=0;for(const x of list){if(chosen.length>=lim||n>=max)break;if(!chosen.includes(x)){chosen.push(x);n++;}}};
+  // misses, then stale; while a new object exists they leave one slot free, so every lesson meets something new
+  take(misses,fresh.length?N-1:N);take(stale,fresh.length?N-1:N);
+  take(fresh,N,Math.min(2,N));   // rule 3: at most two new objects from this step
+  take(review,N);take(objs,N);   // then review, then any eligible object, so N is reached when the pool allows
+  // within an object: miss, new (unheard), stale, review (oldest first), heard today; ties in the language order
+  // rotated by slot i (object 0: en,de,es; 1: de,es,en; 2: es,en,de …), so a left-out pair differs per object (R-W2)
+  const rank=p=>isMiss(p)?0:p.heard===0?1:isStale(p)?2:p.last!==d?3:4,WHY=['miss','new','stale','review','review'];
+  const rot=(l,i)=>(L.indexOf(l)-i%L.length+L.length)%L.length;
+  return chosen.flatMap((x,i)=>x.ps.slice().sort((a,b)=>rank(a)-rank(b)||(rank(a)===3?(a.last<b.last?-1:a.last>b.last?1:0):0)||rot(a.lang,i)-rot(b.lang,i))
+    .map(p=>({obj:p.obj.id,lang:p.lang,why:WHY[rank(p)]})));
 }
 function dinnerWords(){
   const m=stats(),d=today(),L=langs();
@@ -683,12 +757,13 @@ const MOMENT={dog:'when you see a dog on the way home or in a book',cat:'when a 
 
 // ---------- parent view ----------
 const $=id=>document.getElementById(id);
-// the order a session plays: languages interleaved, then the plan again as review so it fills the picture limit
+// the order a session plays (WA R-W3): round-robin over the chosen objects in slot order, each object's languages in
+// need order, rounds repeated until the picture limit is reached; repeats are review
 function buildQueue(plan){
-  const L=langs(),q=[];
-  const byLang=Object.fromEntries(L.map(l=>[l,plan.filter(p=>p.lang===l)]));
-  while(L.some(l=>byLang[l].length))for(const l of L)if(byLang[l].length)q.push(byLang[l].shift());
-  const base=q.slice();for(let i=0;i<6;i++)q.push(...base.map(x=>({...x,why:'review'})));
+  const groups=[],q=[],P=pics();
+  for(const p of plan){let g=groups.find(g=>g.obj===p.obj);if(!g){g={obj:p.obj,ps:[]};groups.push(g);}g.ps.push(p);}
+  if(!groups.length)return q;
+  for(let r=0;q.length<P;r++)for(const g of groups){const p=g.ps[r%g.ps.length];q.push(r<g.ps.length?{...p}:{...p,why:'review'});}
   return q;
 }
 const cap1=s=>s?s[0].toUpperCase()+s.slice(1):s;
@@ -709,7 +784,8 @@ function render(){
   // everything switched off (R17): no alert, Start disabled, the reason in planMeta
   const pm=$('planMeta');
   if(!pool.length){pm.textContent='No words switched on. Open Words → Choose to switch some on.';pm.dataset.testid='plan-empty';}
-  else{pm.textContent=(doneToday.length?`${doneToday.length} turns today · ${doneToday.filter(t=>t.result==='said').length} said back · `:'')+`${seenP.size} words · ${pics()} pictures · ~${Math.max(1,Math.round(pics()/2))} min`;delete pm.dataset.testid;}
+  else{const nW=groups.length,rnd=lessonWordsMode()==='random'?' (random)':'';   // words = distinct objects (WA R-W6)
+    pm.textContent=(doneToday.length?`${doneToday.length} turns today · ${doneToday.filter(t=>t.result==='said').length} said back · `:'')+`${nW} ${nW===1?'word':'words'}${rnd} · ${pics()} pictures · ~${Math.max(1,Math.round(pics()/2))} min`;pm.dataset.testid='plan-meta';}
   $('startBtn').disabled=!pool.length;
   $('startBtn').textContent=doneToday.length?'Play again':'Start playing';
   const SHOW=3;
@@ -731,10 +807,21 @@ function render(){
   if(!ACCT)$('wordsSummary').textContent=`${OBJECTS.length} words in the bank`;
   renderAnimals();
   $('optEn').checked=S.settings.en;$('optDe').checked=S.settings.de;$('optEs').checked=S.settings.es;$('optPics').value=pics();$('optParent').checked=S.settings.parent;
+  renderWordsSetting(plan.length);
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   $('asrNote').textContent=SR?(S.settings.parent?'Parent-confirm mode: you tap 👏 or 🤫 after each word.':asrBlocked?'Speech recognition stopped working this time (microphone blocked, missing or offline), so you tap 👏 or 🤫 after each word. Check Test microphone, then reload.':'This browser supports speech recognition — that is not a microphone check, so press Test microphone first. In a session the app judges what she says on its own.'):'No speech recognition in this browser — parent-confirm mode is used.';
   if(ACCT&&A.ready)renderWords();
   if($('zoo').classList.contains('on'))renderZoo();
+}
+// the "Words per lesson" rows (WA R-W7); pairs = the lesson's word–language pairs (Σ languages per chosen word)
+function renderWordsSetting(pairs){
+  const mode=lessonWordsMode(),T=wordsTarget(),rec=wordsRec(),P=pics(),rnd=mode==='random';
+  $('optWords').value=T;['optWords','wordsMinus','wordsPlus'].forEach(id=>{$(id).disabled=rnd;});
+  $('optWordsRandom').checked=rnd;
+  $('optWordsHint').textContent=mode==='rec'?`Recommended for her: ${rec}. A few words heard often tend to stick better for toddlers.`:rnd?'Random each lesson: 2–5 words.':`Recommended: ${rec}`;
+  $('wordsRec').hidden=mode==='rec'||rnd;
+  // no language note in 'rec' mode: leaving a few pairs out is the designed default there
+  $('optWordsNote').textContent=T>P?`Only ${P} words fit in ${P} pictures.`:mode==='rec'?'':pairs>P?`Every word comes up at least once. A few languages wait for the next lesson; ${pairs} pictures fit them all.`:'';
 }
 // ---------- tabs ----------
 const VIEWS={today:'vToday',dinner:'vDinner',words:'vWords',animals:'zoo',settings:'vSettings'};
@@ -754,6 +841,13 @@ $('avatar').onclick=()=>showTab('settings');
 $('wordsMore').onclick=()=>{wordsAll=!wordsAll;render();};
 ['picsMinus','picsPlus'].forEach((id,i)=>$(id).addEventListener('click',()=>{const inp=$('optPics');inp.value=Math.min(30,Math.max(6,pics()+(i?1:-1)));inp.dispatchEvent(new Event('change'));}));
 ['optEn','optDe','optEs','optParent'].forEach(id=>$(id).addEventListener('change',()=>{S.settings.en=$('optEn').checked;S.settings.de=$('optDe').checked;S.settings.es=$('optEs').checked;S.settings.parent=$('optParent').checked;if(!langs().length){S.settings.en=true;}save();render();}));
+// words per lesson: −/+ and typing set a fixed 2…8 from the shown value; an empty or non-number entry means 'rec'
+const setWords=v=>{S.settings.lessonWords=normLessonWords(v);save();render();};
+['wordsMinus','wordsPlus'].forEach((id,i)=>$(id).addEventListener('click',()=>{if(lessonWordsMode()==='random')return;setWords(clampN(wordsTarget()+(i?1:-1),2,8));}));
+// in Random the input only shows the draw: a change fired when it gets disabled (a pull, while focused) is not a choice
+$('optWords').addEventListener('change',()=>{if(lessonWordsMode()==='random'||$('optWords').disabled)return render();const v=$('optWords').value.trim(),n=+v;setWords(v===''||!Number.isFinite(n)?'rec':clampN(Math.round(n),2,8));});
+$('wordsRec').addEventListener('click',()=>setWords('rec'));
+$('optWordsRandom').addEventListener('change',()=>setWords($('optWordsRandom').checked?'random':'rec'));
 $('optPics').addEventListener('change',()=>{S.settings.pics=Math.min(30,Math.max(6,Math.round(+$('optPics').value)||8));save();render();});
 $('testBtn').onclick=async()=>{const out=$('testOut');const vs=(window.speechSynthesis?speechSynthesis.getVoices():[]);out.textContent='Voices: '+vs.length+' ('+['en','de','es'].map(l=>l+':'+vs.filter(v=>v.lang.toLowerCase().replace('_','-').startsWith(l)).length).join(', ')+'). Speaking…';lastSpeech='';await speak('dog',"en");const a=lastSpeech+' ('+lastSrc+')';await speak('Hund',"de");const d=lastSpeech+' ('+lastSrc+')';await speak('perro',"es");const s=lastSpeech+' ('+lastSrc+')';const played=m=>m.replace(/^ok\b/,'played');out.textContent+=' EN: '+played(a)+' · DE: '+played(d)+' · ES: '+played(s)+'. This checks the speaker only — use Test microphone for the mic.';};
 $('micBtn').onclick=async()=>{const out=$('testOut'),btn=$('micBtn');btn.disabled=true;out.textContent='Listening — say "dog" now…';const alts=await listen('en');btn.disabled=false;if(alts&&alts.length){const heard=(alts[0]||'').trim()||'something';out.textContent=matches(alts,'dog')?'✓ The microphone works — it heard "'+heard+'".':'✓ The microphone works — it heard "'+heard+'", not "dog". Try again, clearly and close to the phone.';return;}const blocked='the microphone is blocked for this site. Allow it in Chrome (tap the icon left of the address), then reload.';const why={'not-allowed':blocked,'service-not-allowed':blocked,'audio-capture':'no working microphone was found, or another app is using it.','network':'speech recognition needs internet — check the connection.','unsupported':'this browser has no speech recognition, so sessions use parent-confirm (👏/🤫).','start-failed':'speech recognition could not start. Reload and try again.'}[lastRecError];out.textContent='✕ Microphone test failed: '+(why||'nothing was heard. Check the microphone isn’t muted or covered, then try again.');};
@@ -761,7 +855,7 @@ $('resetBtn').onclick=()=>{if(confirm('Delete the whole log?')){S.log=[];S.dropp
 $('exportBtn').onclick=async()=>{const csv='day,time,object,lang,word,result,judge\n'+S.log.map(t=>{const w=wordById(t.obj);return [t.day,t.ts,t.obj,t.lang,(w&&w[t.lang])||'',t.result,t.judge].join(',');}).join('\n');$('csv').value=csv;try{await navigator.clipboard.writeText(csv);$('exportBtn').textContent='Copied';}catch(e){$('csv').hidden=false;}setTimeout(()=>$('exportBtn').textContent='Copy log as CSV',1500);};
 
 // ---------- child mode ----------
-let queue=[],turnNo=0,current=null,timer=null,endAt=0,busy=false,rec=null,cap=8,sid=0,done=0,revealed=false,revealing=false,revealReady=0;
+let queue=[],P0=new Set(),played=new Set(),turnNo=0,current=null,timer=null,endAt=0,busy=false,rec=null,cap=8,sid=0,done=0,revealed=false,revealing=false,revealReady=0;
 const wrap=$('cardwrap'),card=$('card');
 let lastSpeech='';
 let lastRecError='';
@@ -808,17 +902,25 @@ async function runTurn(){
   if(said===null){judge='parent';wrap.className='';cue((asrBlocked&&!S.settings.parent?'Mic not available — did':'Did')+' she say it? 👏\u00a0yes\u00a0·\u00a0🤫\u00a0not\u00a0yet');said=await parentConfirm();if(gone())return;}
   wrap.className='';
   if(said){wrap.classList.add('ok');cue('✓ Said it');logTurn('said',judge);egg();await speak(PRAISE[l]+' '+word,l);}
-  else{cue('Not yet — listen again');logTurn('missed',judge);egg();await speak(word,l);const room=cap-turnNo;if(room>=2)queue.splice(Math.min(3,queue.length,room-1),0,{...current});}
+  else{cue('Not yet — listen again');logTurn('missed',judge);egg();await speak(word,l);if(gone())return;retryMissed();}
   if(gone())return;
   wrap.className='';busy=false;
   if(done===Math.floor(cap/2)&&!revealed&&queue.length&&Date.now()<=endAt)return reveal();
   next();
 }
+// a missed word comes back a little later in the session, but only if no planned picture gets pushed out (WA R-W5);
+// otherwise it waits for a later lesson, where it is a miss
+function retryMissed(){
+  const room=cap-turnNo;if(room<2)return;
+  const t=queue.slice();t.splice(Math.min(3,t.length,room-1),0,{...current});
+  const win=new Set(t.slice(0,room).map(x=>key(x.obj,x.lang)));
+  if([...P0].every(k=>played.has(k)||win.has(k)))queue=t;
+}
 function next(){
   // finished: every picture done, or nothing left to show
   if(turnNo>=cap||(!queue.length&&done>0)){return endSession(true);}
   if(Date.now()>endAt||!queue.length){return endSession();}
-  current=queue.shift();turnNo++;
+  current=queue.shift();turnNo++;played.add(key(current.obj,current.lang));
   const o=wordById(current.obj);card.textContent=o.e;
   $('cueLang').className='lang '+current.lang;$('cueLang').textContent=current.lang.toUpperCase();$('cueName').textContent=LANGNAME[current.lang];$('cueWord').textContent=o[current.lang];cue('Tap the picture');
   wrap.style.setProperty('--accent',`var(--${current.lang})`);
@@ -830,6 +932,7 @@ function startSession(){
   queue=buildQueue(plan);
   // the picture limit sets the length; 15 minutes only closes a session nobody finishes
   cap=pics();endAt=Date.now()+15*60000;
+  P0=new Set(queue.slice(0,cap).map(x=>key(x.obj,x.lang)));played=new Set();   // the planned pictures (WA R-W5)
   sid++;busy=false;done=0;revealed=false;revealing=false;$('reveal').style.display='none';$('cue').style.display='';$('childNote').hidden=false;drawEggs();
   $('child').classList.add('on');
   timer=setInterval(()=>{if(Date.now()>endAt&&!busy)endSession();},1000);
@@ -851,11 +954,29 @@ function drawEggs(){$('eggs').innerHTML=Array.from({length:cap},(_,i)=>`<span cl
 function egg(){done++;drawEggs();}
 let sayTok=0;
 async function sayNames(a){const my=++sayTok;for(const l of langs()){if(my!==sayTok)return;await speak(a[l],l);}}
+// ---------- animal families (WA, spec-wa R-A2…R-A8) ----------
+// Known gifts in member order: day ascending, then the account gift uuid, then the position in S.earned
+// (architecture-wa §3). Legacy gifts {id:animal, day} have no uuid, so they fall through to the position.
+// Works on a copy: S.earned and merge() keep their own order. Unknown ids and malformed entries ({}, no valid day)
+// stay in S.earned but are not shown or counted (architecture-wa §7.1).
+function members(){
+  const xs=[];
+  S.earned.forEach((g,i)=>{const id=aid(g);if(typeof id==='string'&&ANIMAL_IDX.has(id)&&typeof g.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(g.day))
+    xs.push({g,i,a:ANIMALS[ANIMAL_IDX.get(id)],day:g.day,tie:g.animal?String(g.id):''});});
+  xs.sort((x,y)=>x.day<y.day?-1:x.day>y.day?1:x.tie<y.tie?-1:x.tie>y.tie?1:x.i-y.i);
+  const n={};for(const x of xs)x.k=n[x.a.id]=(n[x.a.id]||0)+1;   // k = member number within the family, 1-based
+  return xs;
+}
+function familyCounts(){const c={};for(const x of members())c[x.a.id]=x.k;return c;}
+// the family with the fewest members; ties go to the lowest roster index
+function nextAnimal(){const c=familyCounts();let best=ANIMALS[0];for(const a of ANIMALS)if((c[a.id]||0)<(c[best.id]||0))best=a;return best;}
+// one member as markup (R-A8): base emoji, accessory from member 2, the number badge only where asked (the family strip)
+const memHTML=(a,k,num)=>`<span class="mem" data-member="${k}">${esc(a.e)}${k>=2?`<span class="acc">${esc(ACC[(k-2)%ACC.length])}</span>`:''}${num&&k>=2?`<b class="num">${k}</b>`:''}</span>`;
 function reveal(){
   revealed=true;revealing=true;
-  const a=ANIMALS[S.earned.length%ANIMALS.length];
+  const a=nextAnimal();   // base emoji only: never member markup inside .shadow (the accessory stays a surprise)
   $('cue').style.display='none';$('childNote').hidden=true;$('reveal').style.display='block';
-  card.innerHTML=`<span class="shadow">${a.e}</span>`;
+  card.innerHTML=`<span class="shadow">${esc(a.e)}</span>`;
   // it stays until she taps; taps in the first 2.5s are ignored, so the reflex tap after the last picture doesn't skip it
   revealReady=Date.now()+2500;const my=sid;
   cue(`${cap-done} more pictures to find out!`);
@@ -863,13 +984,16 @@ function reveal(){
   speak("Who's coming?",'en');
 }
 function found(){
-  const n=S.earned.length,a=ANIMALS[n%ANIMALS.length],name=a.en[0].toUpperCase()+a.en.slice(1);
-  S.earned.push(ACCT?{id:uuid(),animal:a.id,day:today()}:{id:a.id,day:today()});save();
-  $('partyArt').textContent=a.e;
-  $('partyText').textContent=n>=ANIMALS.length?`${name} is here again!`:n===ANIMALS.length-1?`${name} is here — that's all ${ANIMALS.length}!`:`${name} is here!`;
+  const a=nextAnimal(),name=cap1(a.en),gift=ACCT?{id:uuid(),animal:a.id,day:today()}:{id:a.id,day:today()};
+  S.earned.push(gift);save();
+  // the member number with the same order the Zoo uses, computed after the push (architecture-wa §3)
+  const fam=members().filter(x=>x.a===a),me=fam.find(x=>x.g===gift),k=me?me.k:fam.length;
+  $('partyArt').innerHTML=memHTML(a,k,false);
+  $('partyText').textContent=k===1?`${name} is here!`:k<=10?`A ${ORDINAL[k-2]} ${a.en} joined the ${a.en} family!`:`${name} number ${k} joined the ${a.en} family!`;
   $('partyEggs').innerHTML=Array.from({length:cap},(_,i)=>`<span class="seg on" style="animation:pop .4s ${i*90}ms both"></span>`).join('');
-  const have=ANIMALS.filter(x=>S.earned.some(e=>aid(e)===x.id));
-  $('partyShelf').innerHTML=have.map(x=>x===a?`<span class="new">${x.e}</span>`:x.e).join('');
+  // this animal's family in member order: the last 8, "+hidden" before them, the new one highlighted
+  const shown=fam.slice(-8),hidden=fam.length-shown.length;
+  $('partyShelf').innerHTML=(hidden?`+${hidden} `:'')+shown.map(x=>x.g===gift?`<span class="new">${memHTML(a,x.k,false)}</span>`:memHTML(a,x.k,false)).join('');
   // a short, slow fall of confetti in the language colours: it runs once and does not flash
   const cols=['var(--en)','var(--de)','var(--es)','var(--ok)'];
   $('confetti').innerHTML=Array.from({length:28},(_,i)=>`<span class="cf" style="left:${(i*37)%100}%;background:${cols[i%4]};animation-duration:${4+(i%5)*.6}s;animation-delay:${(i%7)*.25}s;--r:${i%2?'':'-'}${240+(i%4)*90}deg"></span>`).join('');
@@ -882,29 +1006,36 @@ function found(){
 let partyReady=0,partyTok=0;
 $('party').addEventListener('click',()=>{if(Date.now()<partyReady)return;partyTok++;$('party').classList.remove('on');$('confetti').innerHTML='';sayTok++;stopAudio();});
 $('bye').addEventListener('click',()=>$('bye').classList.remove('on'));
+const famWord=n=>n===1?'1 family':`${n} families`;
 function renderAnimals(){
-  const have=new Set(S.earned.map(aid)),n=S.earned.length,coming=ANIMALS[n%ANIMALS.length],SLOTS=5;
-  $('animalsCount').textContent=`${have.size} / ${ANIMALS.length}`;
-  $('animalsMeta').textContent=!n?"Finish today's session to meet the first one.":have.size>=ANIMALS.length?`All ${ANIMALS.length} collected!`:'Someone new comes after the next session.';
-  // the newest friends, then the one that's coming, then empty places
-  const got=ANIMALS.filter(a=>have.has(a.id)).slice(-(SLOTS-1));
-  $('friendRow').innerHTML=got.map(a=>`<span class="friend">${a.e}</span>`).join('')+'<span class="friend next">?</span>'+'<span class="friend"></span>'.repeat(Math.max(0,SLOTS-1-got.length));
+  const all=members(),F=all.length,M=new Set(all.map(x=>x.a.id)).size,SLOTS=5;
+  $('animalsCount').textContent=plural(F,'friend');
+  $('animalsMeta').textContent=!F?"Finish today's session to meet the first one.":`${famWord(M)} · someone new comes after the next session.`;
+  // the newest friends (member order, newest last), then the one that's coming, then empty places
+  const got=all.slice(-(SLOTS-1));
+  $('friendRow').innerHTML=got.map(x=>`<span class="friend">${memHTML(x.a,x.k,false)}</span>`).join('')+'<span class="friend next">?</span>'+'<span class="friend"></span>'.repeat(Math.max(0,SLOTS-1-got.length));
 }
 function renderZoo(){
-  const n=S.earned.length,coming=ANIMALS[n%ANIMALS.length],count={};S.earned.forEach(x=>count[aid(x)]=(count[aid(x)]||0)+1);
-  const have=Object.keys(count).length;
-  $('zooMeta').textContent=have>=ANIMALS.length?`All ${ANIMALS.length}!`:n?`${have} of ${ANIMALS.length} · tap one to hear its name`:'Finish a session to meet the first one.';
-  $('zooGrid').innerHTML=ANIMALS.map(a=>count[a.id]?`<button class="tile" data-animal="${a.id}" data-state="earned" aria-label="${a.en}">${a.e}${count[a.id]>1?`<span class="count">×${count[a.id]}</span>`:''}</button>`
-    :a===coming?`<button class="tile" data-animal="${a.id}" data-state="next" aria-label="Who's coming?"><span class="shadow">${a.e}</span></button>`
-    :`<div class="tile later"><span class="egg"></span></div>`).join('');
+  const all=members(),count=familyCounts(),F=all.length,M=Object.keys(count).length,coming=nextAnimal();
+  $('zooMeta').textContent=F?`${plural(F,'friend')} · ${famWord(M)} · tap one to hear its name`:'Finish a session to meet the first one.';
+  // families she has (roster order), then the one that's coming, then an egg for every animal not met yet
+  $('zooGrid').innerHTML=ANIMALS.filter(a=>count[a.id]).map(a=>`<button class="tile" data-animal="${a.id}" data-state="earned" data-count="${count[a.id]}" aria-label="${esc(a.en)}">${memHTML(a,1,false)}${count[a.id]>1?`<span class="count">×${count[a.id]}</span>`:''}</button>`).join('')
+    +`<button class="tile" data-animal="${coming.id}" data-state="next" aria-label="Who's coming?"><span class="shadow">${esc(coming.e)}</span></button>`
+    +ANIMALS.filter(a=>!count[a.id]&&a!==coming).map(()=>`<div class="tile later"><span class="egg"></span></div>`).join('');
   $('zooSay').textContent='';
 }
 $('zooGrid').onclick=e=>{
   const t=e.target&&e.target.closest?e.target.closest('[data-animal]'):null,a=t&&ANIMALS.find(x=>x.id===t.dataset.animal);if(!a)return;
   if(t.dataset.state==='next'){sayTok++;$('zooSay').textContent="Who's coming? Finish a session to find out.";speak("Who's coming?",'en');return;}
-  $('zooSay').innerHTML=langs().map(l=>`<span class="lang ${l}">${l.toUpperCase()}</span> ${a[l]}`).join(' · ');
+  const fam=members().filter(x=>x.a===a);
+  $('zooSay').innerHTML=langs().map(l=>`<span class="lang ${l}">${l.toUpperCase()}</span> ${esc(a[l])}`).join(' · ')
+    +`<div class="family" data-testid="zoo-family">${fam.map(x=>memHTML(a,x.k,true)).join('')}</div>`;
   sayNames(a);
 };
+// read-only QA hooks (spec-wa "Data & interfaces"); queue() is exactly what the Today card previews and Start plays
+const lessonQueue=()=>buildQueue(buildPlan()).slice(0,pics()).map(x=>({obj:x.obj,lang:x.lang}));
+window.RR_LESSON={mode:()=>lessonWordsMode(),target:()=>wordsTarget(),rec:()=>wordsRec(),queue:lessonQueue,n:()=>new Set(lessonQueue().map(x=>x.obj)).size};
+window.RR_ANIMALS={roster:()=>ANIMALS.map(a=>Object.assign({},a)),next:()=>Object.assign({},nextAnimal()),counts:()=>familyCounts()};
 card.addEventListener('click',()=>{if(revealing){if(Date.now()<revealReady)return;revealing=false;$('reveal').style.display='none';$('cue').style.display='';$('childNote').hidden=false;return next();}if(current)runTurn();});
 $('cuePlay').addEventListener('click',()=>{if(current&&!revealing)runTurn();});
 // ✕ ends the session only after a 1.5s hold; a tap just shows "Hold to stop", so a toddler tapping around can't end it
@@ -1215,7 +1346,7 @@ $('scrChild').addEventListener('submit',async e=>{e.preventDefault();const n=cle
   if(bad){$('childErr').textContent=bad;return;}
   if(!L.length){$('childErr').textContent='Pick at least one language.';return;}
   $('childErr').textContent='';$('btnChild').disabled=true;const gen=A.gen;
-  const settings={en:L.includes('en'),de:L.includes('de'),es:L.includes('es'),pics:8,parent:false};
+  const settings={en:L.includes('en'),de:L.includes('de'),es:L.includes('es'),pics:8,parent:false,lessonWords:'rec'};
   let c=null,err=null;const r=await BE.data.createChild({nickname:n,languages:L,settings});
   if(r&&r.child)c=r.child;
   else if(r&&r.error==='exists'){const g=await BE.data.getChild();if(g&&!g.error)c=g;else err=(g&&g.error)||'server';}
@@ -1257,15 +1388,16 @@ async function onboard(){
 function finishOnboarding(c){
   enterApp({user_id:A.user.id,email:A.user.email,terms:true,child:{id:c.id,nickname:c.nickname},cursor:null,last_sync:null,settings_at:c.settings_updated_at||c.updated_at||null},c);
 }
-function resetS(){S.log=[];S.dropped=[];S.earned=[];S.words=[];S.settings={en:true,de:true,es:true,pics:8,parent:false};S.v=2;}
+function resetS(){S.log=[];S.dropped=[];S.earned=[];S.words=[];S.settings={en:true,de:true,es:true,pics:8,parent:false,lessonWords:'rec'};S.v=2;}
 // off (built-in words switched off) travels inside settings: no schema change, same last-write-wins (R18)
-const settingsObj=()=>({en:!!S.settings.en,de:!!S.settings.de,es:!!S.settings.es,pics:pics(),parent:!!S.settings.parent,off:cleanOff(S.settings.off)});
+const settingsObj=()=>({en:!!S.settings.en,de:!!S.settings.de,es:!!S.settings.es,pics:pics(),parent:!!S.settings.parent,off:cleanOff(S.settings.off),lessonWords:lessonWordsMode()});
 // server (or pilot) settings into S.settings; languages win over the en/de/es flags when given (spec R17, A4)
 function applySettings(s,L){const o=Object.assign({},s&&typeof s==='object'?s:{});
   if(Array.isArray(L)&&L.length)for(const l of LANGS)o[l]=L.includes(l);
   for(const k of ['en','de','es','parent'])if(o[k]!==undefined)S.settings[k]=!!o[k];
   if(o.pics!==undefined)S.settings.pics=Math.min(30,Math.max(6,Math.round(+o.pics)||8));
   if(Array.isArray(o.off))S.settings.off=cleanOff(o.off);   // only when given: settings without off leave it alone (R18, R22)
+  if(o.lessonWords!==undefined)S.settings.lessonWords=normLessonWords(o.lessonWords);   // validated; missing = keep local (WA R-W8)
   if(!langs().length)S.settings.en=true;}
 function enterApp(meta,c){
   A.meta=meta;resetS();
@@ -1292,7 +1424,8 @@ function acctSave(){
   if(!A.ready)return;
   const cid=A.meta.child.id;let added=0;
   for(const t of S.log){if(!t.id)t.id=uuid();if(!A.seenT.has(t.id)){A.seenT.add(t.id);A.outbox.push({k:'turn',row:{id:t.id,child_id:cid,day:t.day,ts:t.ts,obj:t.obj,lang:t.lang,result:t.result,judge:t.judge}});added++;}}
-  for(const g of S.earned){if(!g.animal){g.animal=g.id;g.id=uuid();}if(!A.seenG.has(g.id)){A.seenG.add(g.id);A.outbox.push({k:'gift',row:{id:g.id,child_id:cid,day:g.day,animal:g.animal}});added++;}}
+  // a malformed gift ({} or no day) stays local and is never queued: the server would reject the whole push (architecture-wa §7.1)
+  for(const g of S.earned){if(!okGift(g))continue;if(!g.animal){g.animal=g.id;g.id=uuid();}if(!A.seenG.has(g.id)){A.seenG.add(g.id);A.outbox.push({k:'gift',row:{id:g.id,child_id:cid,day:g.day,animal:g.animal}});added++;}}
   for(const p of S.dropped)if(!A.seenD.has(p)){A.seenD.add(p);if(okPair(p)){A.outbox.push({k:'drop',row:{child_id:cid,pair_key:p}});added++;}}
   // an added, toggled or deleted own word: one entry per word, a newer change replaces the queued one (R19)
   for(const w of S.words){const k=wordKey(w);if(A.seenW.get(w.id)!==k){A.seenW.set(w.id,k);A.outbox=A.outbox.filter(e=>!(e.k==='word'&&e.row.id===w.id));
@@ -1353,7 +1486,11 @@ function merge(r){
   if(mergeWords(r.words))ch=true;
   const s=r.settings;
   if(s&&s.updated_at&&!A.outbox.some(e=>e.k==='settings')&&(!A.meta.settings_at||tms(s.updated_at)>tms(A.meta.settings_at))){
-    applySettings(s.settings,s.languages);A.lastSettings=JSON.stringify(settingsObj());A.meta.settings_at=s.updated_at;ch=true;}
+    applySettings(s.settings,s.languages);A.meta.settings_at=s.updated_at;ch=true;
+    // self-heal (architecture-wa §2): an older build saved settings without lessonWords; keep the local value and,
+    // unless it is 'rec' (what a missing key means anyway), re-queue the settings so the key goes back to the server
+    const noKey=!(s.settings&&typeof s.settings==='object'&&Object.prototype.hasOwnProperty.call(s.settings,'lessonWords'));
+    A.lastSettings=noKey&&lessonWordsMode()!=='rec'?'':JSON.stringify(settingsObj());}
   if(ch){S.log.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:a.ts<b.ts?-1:a.ts>b.ts?1:0);S.earned.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:0);
     A.storageFail=!writeLS(KEY,S);render();}
   return ch;
@@ -1417,7 +1554,7 @@ function clearWorkingCopy(){[KEY,OUTBOX_KEY,SYNC_KEY].forEach(removeLS);}
 function clearSessionKeys(){removeLS('rr-stub-session-'+ENV);const pre='sb-rr-'+ENV+'-auth',ks=[];
   try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(pre))ks.push(k);}}catch(e){return;}
   ks.forEach(removeLS);}
-function wipeDom(){['zooGrid','partyShelf','partyArt','partyEggs','partyText','confetti','animalsMeta','zooMeta','zooSay','tbl','dinner','planList','planMeta','bedtime','bankNote','eggs','whoami','backendLabel','syncStatus','turnCount','importText','testOut'].forEach(id=>{$(id).textContent='';});
+function wipeDom(){['zooGrid','partyShelf','partyArt','partyEggs','partyText','confetti','animalsMeta','zooMeta','zooSay','tbl','dinner','planList','planMeta','bedtime','bankNote','eggs','whoami','backendLabel','syncStatus','turnCount','importText','testOut','optWordsHint','optWordsNote'].forEach(id=>{$(id).textContent='';});
   importMsg('');['party','bye'].forEach(id=>$(id).classList.remove('on'));}
 async function doSignOut(){
   A.ready=false;A.gen++;A.flushing=false;A.pulling=false;clearTimeout(A.saveT);clearInterval(A.tick);

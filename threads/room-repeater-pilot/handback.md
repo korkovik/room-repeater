@@ -1,0 +1,9 @@
+# Hand-back — room-repeater-pilot (ordered by what unblocks the most)
+
+- [ ] 2026-10-01 qa-tester: Phone UAT of increment WA on https://korkovik.github.io/room-repeater/dev/?backend=off (about 10 min) — QA passed 91/92 headless; only real-device emoji rendering is left — steps: (1) fresh start: Settings shows "Words per lesson 3", Today shows "3 friends, 3 languages"; play one lesson tapping 👏 and check the 🐇 silhouette appears halfway and "Rabbit is here!" at the end; (2) Today again: the next lesson starts with ⚽ ball in DE; (3) Settings: tap + to 4, check the gentle note "…12 pictures fit them all.", then "Use recommended" removes it; (4) switch "Random each lesson" on and check Today shows "N words (random)"; (5) Animals tab on Android: 🦩 🐿️ 🦥 and the accessories render (optional seeding steps in qa-report-wa.md, Deferred #82). Then say pass/fail; on pass, recommended next is Promote → uat.
+- [ ] 2026-10-01 scrum-master: Confirm you are fine that, at the default 3 words × 3 languages in 8 pictures, a missed word is not retried inside the same lesson (it comes back first in the next lesson) — a direct consequence of choosing 3 words — options: (a) keep as is (recommended: every planned word gets its turn, and misses lead the next lesson); (b) raise the default pictures to 9–10 so there is room for a retry.
+- [ ] 2026-10-01 scrum-master (carried over): Create Supabase project rr-nonprod and run migrations 001 + 002 so the account-mode cases blocked on a real backend can run — no migration is needed for WA (architect confirmed) — recommended before I2b.
+
+Decided on 2026-10-01 (no action): recommended words = 3 (formula clamp(floor(pictures/languages),3,4)), Random 2–5, the 12 accessories 🎀🎩👑🧢🕶️🎈🌸⭐🧣👓🎒🌼.
+
+Engineering follow-ups (no Tom action, next increment): security MINOR 1–4 (security-wa.md); QA O-1 self-heal timestamp when an older client's clock is ahead (qa-report-wa.md).
